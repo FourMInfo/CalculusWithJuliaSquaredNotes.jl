@@ -12,7 +12,7 @@ book:
   author: "John Verzani"
   date: now
   search: true
-  repo-url: https://github.com/jverzani/CalculusWithJuliaNotes.jl
+  repo-url: https://github.com/FourMInfo/CalculusWithJuliaSquaredNotes.jl
   repo-subdir: quarto/
   repo-actions: [edit, issue]
   navbar:

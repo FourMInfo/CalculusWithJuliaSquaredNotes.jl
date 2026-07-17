@@ -2,6 +2,7 @@
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CalculusWithJulia = "a2e0e22d-7d4c-5312-9169-8b992201a882"
+CalculusWithJuliaSquared = "f826098b-d57e-4440-b91e-2a05d35c24ae"
 Contour = "d38c429a-6771-53c6-b99e-75d170b6e991"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
@@ -50,3 +51,6 @@ TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 UnitfulUS = "7dc9378f-8956-57ef-a780-aa31cc70ff3d"
+
+[sources]
+CalculusWithJuliaSquared = { url = "https://github.com/FourMInfo/CalculusWithJuliaSquared.jl" }
