@@ -36,6 +36,15 @@ using Richardson                 # only if a limit chapter uses numeric extrapol
 
 Never alongside `using CalculusWithJulia` or `using SymPy` in the same chapter. CWJS reexports mean no separate `using Plots`/`using Symbolics`. What CWJS provides: see "What CalculusWithJuliaSquared Provides" in the Calculus repo's copilot-instructions, or the package's own docs.
 
+## Per-group environment (renders resolve here — NOT the root)
+
+QuartoNotebookRunner runs each chapter in the **nearest `Project.toml` walking up from the `.qmd`** — i.e. the chapter-group dir (`derivatives/Project.toml`, `limits/Project.toml`, …), **not** the root `quarto/Project.toml`. The 10 group envs are independent (not a workspace) and ship un-instantiated, so renders fail until each group's env is set up. Before porting a group's first chapter:
+
+1. Add `CalculusWithJuliaSquared` + a `[sources]` entry (fork URL) to that group's `Project.toml`; add `Nemo` too if any chapter in the group solves polynomials. Keep `CalculusWithJulia`/`SymPy` during transition; drop them when the whole group is ported (→ Python-free).
+2. Instantiate: `julia --project=<group> -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'`.
+
+Rendered output lands in `_book/` (gitignored), not beside the `.qmd`.
+
 ## Per-Chapter Definition of Done
 
 - `using CalculusWithJulia` → `using CalculusWithJuliaSquared` flipped; no `SymPy` references remain in the chapter
