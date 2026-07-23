@@ -148,6 +148,23 @@ format:
     number-depth: 3
     toc-depth: 3
     link-external-newwindow: true
+    # Make Plotly define its global. Plots.jl's `plotly()` backend emits figures as
+    # `Plotly.newPlot(...)` calls needing the *global* `Plotly`, but references the library
+    # only inline in the body — by which point Quarto has injected requirejs, so plotly
+    # registers as an AMD module, never defines that global, and every figure throws,
+    # leaving blank gaps. (GR figures are unaffected: `data:` URIs needing no JS.)
+    #
+    # Loading plotly first is not an option: `include-in-header` *appends* to <head>, so it
+    # always lands after Quarto's requirejs. Instead hide the AMD loader across the plotly
+    # load, which makes it fall back to defining the global regardless of ordering.
+    #
+    # Version pinned to 2.6.3 to match upstream and the 2.x-era `titlefont`/`tickfont` axis
+    # attributes Plots.jl emits. See porting.instructions.md, "Blank figure gaps".
+    include-in-header:
+      text: |
+        <script>window.__amd_define = window.define; window.define = undefined;</script>
+        <script src="https://cdn.plot.ly/plotly-2.6.3.min.js"></script>
+        <script>window.define = window.__amd_define; delete window.__amd_define;</script>
 #  pdf:
 #    documentclass: scrbook
 #    classoption: [oneside]
