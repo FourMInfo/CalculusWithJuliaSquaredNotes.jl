@@ -7,10 +7,8 @@ This section uses these add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
-using SymPy
 ```
 
 ```{julia}
@@ -429,7 +427,7 @@ The derivative is related to a function, but at times it is more convenient to w
 
 
 ```{julia}
-@syms x::real h::real
+@variables x::Real h::Real
 n = 5
 ex = expand((x+h)^n - x^n)
 ```
@@ -438,7 +436,7 @@ All terms have an `h` in them, so we cancel it out:
 
 
 ```{julia}
-cancel(ex/h, h)
+simplify(expand(ex/h))
 ```
 
 We see the lone term `5x^4` without an $h$, so as we let $h$ go to $0$, this will be the limit. That is, $f'(x) = 5x^4$.
@@ -460,11 +458,22 @@ It isn't a special case, but when $n=0$, we also have the above formula applies,
 We need to consider the difference $\sin(x+h) - \sin(x)$:
 
 
-```{julia}
-sympy.expand_trig(sin(x+h) - sin(x))  # expand_trig is not exposed in `SymPy`
-```
+`Symbolics` has no trig expander -- there is no `expand_trig`, and `simplify` will not
+rewrite $\sin(x+h)$ -- so we apply the angle-addition formula
+$\sin(x+h) = \sin(x)\cos(h) + \sin(h)\cos(x)$ by hand:
 
-That used the formula $\sin(x+h) = \sin(x)\cos(h) + \sin(h)\cos(x)$.
+
+$$
+\sin(x + h) - \sin(x) = \cos(x)\sin(h) - \sin(x)\cdot(1 - \cos(h)).
+$$
+
+We can at least spot-check that rearrangement numerically:
+
+
+```{julia}
+a, b = 1.23, 0.45        # sample values for x and h
+sin(a + b) - sin(a), cos(a)*sin(b) - sin(a)*(1 - cos(b))
+```
 
 
 We could then rearrange the secant line slope formula to become:
@@ -474,12 +483,35 @@ $$
 \cos(x) \cdot \frac{\sin(h)}{h} + \sin(x) \cdot \frac{\cos(h) - 1}{h}
 $$
 
-and take a limit. If the answer isn't clear, we can let `SymPy` do this work:
+and take a limit. `Symbolics` has no finite `limit`, so in place of a symbolic answer we
+gather numeric evidence, in two steps. First, watch the difference quotient converge at a
+sample value of $x$:
 
 
 ```{julia}
-limit((sin(x+h) - sin(x))/ h, h => 0)
+c = 1                                # a sample value of x
+lim(h -> (sin(c+h) - sin(c))/h, 0)
 ```
+
+The table approaches $0.5403\dots$, which is $\cos(1)$. That is a single point; to see that
+the limit is the *function* $\cos(x)$, compare the difference quotient at a small fixed $h$
+across several values of $x$:
+
+
+```{julia}
+hval = 1e-6
+cs = [0, pi/6, pi/4, pi/3, pi/2]
+tidy(v) = round.(v; digits=5) .+ 0.0     # `.+ 0.0` so a rounded -0.0 prints as 0.0
+DataFrame(x = cs,
+          difference_quotient = tidy([(sin(c+hval) - sin(c))/hval for c in cs]),
+          cosx = tidy(cos.(cs)))
+```
+
+The two columns match across the row: the limit of the difference quotient is the function
+$\cos(x)$. This is numeric evidence rather than a proof -- the proof is the algebra above --
+and the values are rounded, as a difference quotient at a finite $h$ only ever approximates
+the derivative.
+
 
 From the formula $[\sin(x)]' = \cos(x)$ we can easily get the *slope* of the tangent line to $f(x) = \sin(x)$ at $x=0$ by simply evaluating $\cos(0) = 1$.
 
@@ -494,11 +526,22 @@ $$
 As noted earlier, Cauchy saw the limit as $u$ goes to $0$ of $f(u) = (1 + u)^{1/u}$ is $e$. Re-expressing the above we can get $1/x \cdot \log(f(h/x))$. The limit as $h$ goes to $0$ of this is found from the composition rules for limits: as $\lim_{h \rightarrow 0} f(h/x) = e$, and since $\log(x)$ is continuous at $e$ we get this expression has a limit of $1/x$.
 
 
-We verify through:
+We verify numerically, the same way -- first the convergence at a sample $x$:
 
 
 ```{julia}
-limit((log(x+h) - log(x))/h, h => 0)
+c = 2                                # a sample value of x
+lim(h -> (log(c+h) - log(c))/h, 0)
+```
+
+which approaches $1/2 = 1/c$, and then across several values of $x$:
+
+
+```{julia}
+cs = [1, 2, 3, 4, 5]
+DataFrame(x = cs,
+          difference_quotient = tidy([(log(c+hval) - log(c))/hval for c in cs]),
+          one_over_x = tidy(1 ./ cs))
 ```
 
   * The derivative of $f(x) = e^x$ can also be done from a limit. We have
@@ -520,7 +563,7 @@ There are several different [notations](http://en.wikipedia.org/wiki/Notation_fo
 There are many other notations:
 
 
-  * The Leibniz notation uses the infinitesimals: $dy/dx$ to relate to $\Delta y/\Delta x$. This notation is very common, and especially useful when more than one variable is involved.  `SymPy` uses Leibniz notation in some of its output, expressing somethings such as:
+  * The Leibniz notation uses the infinitesimals: $dy/dx$ to relate to $\Delta y/\Delta x$. This notation is very common, and especially useful when more than one variable is involved.  `Symbolics` uses Leibniz notation in some of its output, expressing somethings such as:
 
 
 $$
@@ -605,14 +648,14 @@ $$
 ### Product rule
 
 
-Other rules can be similarly derived. `SymPy` can give us them as well. Here we define two symbolic functions `u` and `v` and let `SymPy` derive a formula for the derivative of a product of functions:
+Other rules can be similarly derived. `Symbolics` can give us them as well. Here we define two symbolic functions `u` and `v` and let `Symbolics` produce a formula for the derivative of a product of functions. Lacking a symbolic limit to take of the difference quotient, we apply the derivative operator `Differential(x)` and ask for it to be expanded:
 
 
 ```{julia}
 #| hold: true
-@syms u() v()
+@variables u(..) v(..)
 f(x) = u(x) * v(x)
-limit((f(x+h) - f(x))/h, h => 0)
+expand_derivatives(Differential(x)(f(x)))
 ```
 
 The output uses the Leibniz notation to represent that the derivative of $u(x) \cdot v(x)$ is the $u$ times the derivative of $v$ evaluated at $x$ plus $v$ times the derivative of $u$ evaluated at $x$. A common shorthand is $[uv]' = u'v + uv'$.
@@ -638,9 +681,9 @@ The derivative of $f(x) = u(x)/v(x)$ - a ratio of functions - can be similarly c
 
 ```{julia}
 #| hold: true
-@syms u() v()
+@variables u(..) v(..)
 f(x) = u(x) / v(x)
-limit((f(x+h) - f(x))/h, h => 0)
+simplify(expand_derivatives(Differential(x)(f(x))))
 ```
 
 This example shows a useful template for the quotient rule:
@@ -1025,31 +1068,31 @@ $$
 ---
 
 
-We can verify these with `SymPy`. Rather than take a limit, we will use `SymPy`'s `diff` function to compute derivatives.
+We can verify these with `Symbolics`. Rather than take a limit, we will use the `Symbolics.derivative` function to compute derivatives.
 
 
 ```{julia}
-diff(x^5 * sin(x))
+Symbolics.derivative(x^5 * sin(x), x)
 ```
 
 ```{julia}
-diff(x^5/sin(x))
+Symbolics.derivative(x^5/sin(x), x)
 ```
 
 ```{julia}
-diff(sin(x^5))
+Symbolics.derivative(sin(x^5), x)
 ```
 
 and finally,
 
 
 ```{julia}
-diff(sin(x)^5)
+Symbolics.derivative(sin(x)^5, x)
 ```
 
 :::{.callout-note}
 ## Note
-The `diff` function can be called as `diff(ex)` when there is just one free variable, as in the above examples; as `diff(ex, var)` when there are parameters in the expression.
+`Symbolics.derivative` always takes the variable explicitly, as `Symbolics.derivative(ex, var)`; there is no one-argument form that infers the lone free variable. To see which symbols an expression contains, use `Symbolics.get_variables(ex)`.
 
 :::
 
@@ -1302,14 +1345,14 @@ This can be verified:
 
 
 ```{julia}
-diff(diff(exp(-x^2))) |> simplify
+Symbolics.derivative(Symbolics.derivative(exp(-x^2), x), x) |> simplify
 ```
 
-Having to iterate the use of `diff` is cumbersome. An alternate notation is either specifying the variable twice: `diff(ex, x, x)` or using a number after the variable: `diff(ex, x, 2)`:
+Having to iterate the use of `derivative` is cumbersome. An alternate notation is to raise the derivative operator to a power -- `Differential(x)^2` -- and then expand it:
 
 
 ```{julia}
-diff(exp(-x^2), x, x) |> simplify
+expand_derivatives((Differential(x)^2)(exp(-x^2))) |> simplify
 ```
 
 Higher-order derivatives can become involved when the product or quotient rules becomes involved.

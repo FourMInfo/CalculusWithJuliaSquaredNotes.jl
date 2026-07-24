@@ -7,11 +7,9 @@ This section uses these add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
 using ForwardDiff
-using SymPy
 using Roots
 ```
 
@@ -19,7 +17,7 @@ using Roots
 ---
 
 
-`SymPy` returns symbolic derivatives. Up to choices of simplification, these answers match those that would be derived by hand. This is useful when comparing with known answers and for seeing the structure of the answer. However, there are times we just want to work with the answer numerically. For that we have other options within `Julia`. We discuss approximate derivatives and automatic derivatives. The latter will find wide usage in these notes.
+`Symbolics` returns symbolic derivatives. Up to choices of simplification, these answers match those that would be derived by hand. This is useful when comparing with known answers and for seeing the structure of the answer. However, there are times we just want to work with the answer numerically. For that we have other options within `Julia`. We discuss approximate derivatives and automatic derivatives. The latter will find wide usage in these notes.
 
 
 ### Approximate derivatives
@@ -69,9 +67,9 @@ We can compare to the actual with:
 
 
 ```{julia}
-@syms x
-df = diff(f(x), x)
-factual = convert(Float64, df(c))
+@variables x
+df = Symbolics.derivative(f(x), x)
+factual = Float64(Symbolics.value(substitute(df, Dict(x => c); fold=Val(true))))
 abs(factual - fapprox)
 ```
 
@@ -103,14 +101,14 @@ There are some other ways to compute derivatives numerically that give much more
 The `ForwardDiff` package provides one of [several](https://juliadiff.org/) ways for `Julia` to compute automatic derivatives. `ForwardDiff` is well suited for functions encountered in these notes, which depend on at most a few variables and output no more than a few values at once.
 
 
-The `ForwardDiff` package was loaded in this section; in general its features are available when the `CalculusWithJulia` package is loaded, as that package provides a more convenient interface. The `derivative` function is not exported  by `ForwardDiff`, so its usage requires qualification. To illustrate, to find the derivative of $f(x)$ at a *point* we have this syntax:
+The `ForwardDiff` package was loaded in this section; in general its features are available when the `CalculusWithJuliaSquared` package is loaded, as that package provides a more convenient interface. The `derivative` function is not exported  by `ForwardDiff`, so its usage requires qualification. To illustrate, to find the derivative of $f(x)$ at a *point* we have this syntax:
 
 
 ```{julia}
 ForwardDiff.derivative(f, c)   # derivative is qualified by a module name
 ```
 
-The `CalculusWithJulia` package defines an operator `D` which goes from finding a derivative at a point with `ForwardDiff.derivative` to defining a function which evaluates the derivative at each point. It is defined along the lines of `D(f) = x -> ForwardDiff.derivative(f,x)` in parallel to how the derivative operation for a function is defined mathematically from the definition for its value at a point.
+The `CalculusWithJuliaSquared` package defines an operator `D` which goes from finding a derivative at a point with `ForwardDiff.derivative` to defining a function which evaluates the derivative at each point. It is defined along the lines of `D(f) = x -> ForwardDiff.derivative(f,x)` in parallel to how the derivative operation for a function is defined mathematically from the definition for its value at a point.
 
 
 Here we see the error in estimating $f'(1)$:
@@ -124,7 +122,7 @@ abs(factual - fauto)
 In this case, it is exact.
 
 
-The `D` operator is  defined for most all functions in `Julia`, though, like the `diff` operator in `SymPy` there are some for which it won't work.
+The `D` operator is  defined for most all functions in `Julia`, though, like the `derivative` operator in `Symbolics` there are some for which it won't work.
 
 
 ##### Example
@@ -150,22 +148,22 @@ ds_value = D(f)(c)
 ds_value, fwd, ds_value - fwd
 ```
 
-Finally, `SymPy` gives an exact value we use to compare:
+Finally, `Symbolics` gives an exact value we use to compare:
 
 
 ```{julia}
-fp = diff(f(x), x)
+fp = Symbolics.derivative(f(x), x)
 ```
 
 ```{julia}
-actual = convert(Float64, fp(PI/4))
+actual = Float64(Symbolics.value(substitute(fp, Dict(x => pi/4); fold=Val(true))))
 actual - ds_value, actual - fwd
 ```
 
 #### Convenient notation
 
 
-`Julia` allows the possibility of extending functions to different types. Out of the box, the `'` notation is not employed for functions, but is used for matrices. It is used in postfix position, as with `A'`. We can define it to do the same thing as `D` for functions and then, we can evaluate derivatives with the familiar `f'(x)`. This is done in `CalculusWithJulia` along the lines of `Base.adjoint(f::Function) = D(f)`.
+`Julia` allows the possibility of extending functions to different types. Out of the box, the `'` notation is not employed for functions, but is used for matrices. It is used in postfix position, as with `A'`. We can define it to do the same thing as `D` for functions and then, we can evaluate derivatives with the familiar `f'(x)`. This is done in `CalculusWithJuliaSquared` along the lines of `Base.adjoint(f::Function) = D(f)`.
 
 
 Then, we have, for example:
@@ -197,7 +195,7 @@ We pass in the function object, `k''`, and not the evaluated function.
 
 A quick summary of the $3$ different ways for finding derivatives in `Julia` presented in these notes:
 
-  * Symbolic derivatives are found using `diff` from `SymPy`
+  * Symbolic derivatives are found using `derivative` from `Symbolics`
   * Automatic derivatives are found using the notation `f'` which utilizes `ForwardDiff.derivative`
   * approximate derivatives at a point, `c`, for a given `h` are found with `(f(c+h)-f(c))/h`.
 
@@ -212,14 +210,14 @@ f(x) = exp(-x)*sin(x)
 c = pi
 h = 1e-8
 
-fp = diff(f(x),x)
+fp = Symbolics.derivative(f(x),x)
 
-fp, fp(c), f'(c), (f(c+h) - f(c))/h
+fp, Float64(Symbolics.value(substitute(fp, Dict(x => c); fold=Val(true)))), f'(c), (f(c+h) - f(c))/h
 ```
 
 :::{.callout-note}
 ## Note
-The use of `'` to find derivatives provided by `CalculusWithJulia` is convenient, and used extensively in these notes, but it needs to be noted that it does **not conform** with the generic meaning of `'` within `Julia`'s wider package ecosystem and may cause issue with linear algebra operations; the symbol is meant for the adjoint of a matrix.
+The use of `'` to find derivatives provided by `CalculusWithJuliaSquared` is convenient, and used extensively in these notes, but it needs to be noted that it does **not conform** with the generic meaning of `'` within `Julia`'s wider package ecosystem and may cause issue with linear algebra operations; the symbol is meant for the adjoint of a matrix.
 
 :::
 

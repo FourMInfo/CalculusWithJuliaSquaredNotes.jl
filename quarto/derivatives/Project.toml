@@ -1,5 +1,6 @@
 [deps]
 CalculusWithJulia = "a2e0e22d-7d4c-5312-9169-8b992201a882"
+CalculusWithJuliaSquared = "f826098b-d57e-4440-b91e-2a05d35c24ae"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -21,3 +22,6 @@ TaylorSeries = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[sources]
+CalculusWithJuliaSquared = { url = "https://github.com/FourMInfo/CalculusWithJuliaSquared.jl" }
