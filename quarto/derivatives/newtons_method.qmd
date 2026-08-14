@@ -7,11 +7,8 @@ This section uses these add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
-using SymPy
-using Roots
 ```
 
 
@@ -136,7 +133,7 @@ $$
 x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}.
 $$
 
-Using automatic derivatives, as brought in with the `CalculusWithJulia` package, we can implement this algorithm.
+Using automatic derivatives, as brought in with the `CalculusWithJuliaSquared` package, we can implement this algorithm.
 
 
 The algorithm above starts at $2$ and then becomes:
@@ -382,13 +379,12 @@ b.create('functiongraph', [f, -1.5, 1.5])
 ##### Example: numeric not algebraic
 
 
-For the function $f(x) = \cos(x) - x$, we see that SymPy can not solve symbolically for a zero:
+For the function $f(x) = \cos(x) - x$, we see that Symbolics can not solve symbolically for a zero — `symbolic_solve` returns `nothing`, so no solution is displayed below:
 
 
 ```{julia}
-#| error: true
-@syms x::real
-solve(cos(x) - x, x)
+@variables x
+symbolic_solve(cos(x) - x, x)
 ```
 
 We can find a numeric solution, even though there is no closed-form answer. Here we try Newton's method:
