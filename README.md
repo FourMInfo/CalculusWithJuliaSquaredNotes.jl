@@ -27,4 +27,6 @@ julia --project=@liveserver -e 'using LiveServer; serve(dir="quarto/_book", port
 
 Then open <http://localhost:8001>. Re-run `quarto render` to rebuild; LiveServer picks up the change and refreshes the page.
 
+**While the book is only partially ported, the landing page won't work — go straight to a rendered chapter instead.** The book's index (`quarto/_book/index.html`) is a redirect to the first chapter, but while the early chapters (`index.qmd`, `basics/`, `precalc/`, …) are still unported, that stub redirects to *itself*, so opening <http://localhost:8001/> just loops in the browser. This is expected and clears up once the full book renders. In the meantime, navigate directly to a built page, e.g. <http://localhost:8001/derivatives/derivatives.html> — list what's actually rendered with `find quarto/_book -name '*.html'`.
+
 Two alternatives: `quarto preview` from `quarto/` serves *and* rebuilds on edit (best while actively writing a chapter, but it re-executes cells, which is slow for heavy chapters); or, with no Julia startup at all, `python3 -m http.server 8765 --bind 127.0.0.1` from `quarto/_book/`.
