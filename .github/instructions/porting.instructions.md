@@ -11,7 +11,7 @@ Triage each chapter's SymPy usage into four classes:
 
 1. **Mechanical (M)**: differentiation (`diff` → `Symbolics.derivative`/`Differential`), Taylor series (`series` → `Symbolics.taylor` or `TaylorSeries.jl`), simple algebra, trig equation solving → near line-for-line.
 2. **Needs `Nemo` (N)**: any polynomial equation solving (even a plain quadratic) — add `using Nemo` to the chapter's setup.
-3. **Symbolic-limit rewrite (L)**: `limit(...)` has **no drop-in** (see findings) — rewrite onto the numeric path (CWJS `lim` / `Richardson.extrapolate` / a numeric table).
+3. **Symbolic-limit (L)**: compose **`SymbolicLimits.jl`** (see findings — cancel/rearrange the `0/0` first, unwrap both args, take `[1]`). The numeric path (CWJS `lim` / `Richardson.extrapolate` / a numeric table) is now the *fallback*, needed only for the not-implemented forms — trig (notably the two fundamental limits `sin(h)/h`, `(1-cos(h))/h`), `sqrt`, non-integer powers. *(Scoped down 2026-08-16 from "all limits are numeric rewrites" — that earlier claim was wrong, asserted untested.)*
 4. **Integration rewrite (I)**: antiderivatives `SymbolicNumericIntegration.integrate` can't find — pick a different example, add a numeric `quadgk` fallback, or note the limitation inline as a teaching moment.
 
 Anchor: expand `alternatives/symbolics.qmd` into the canonical symbolic-math reference other chapters link to, instead of duplicating setup boilerplate per chapter.
@@ -33,7 +33,15 @@ Verified live 2026-07-20 (Julia 1.12.6 · Symbolics 7.32.1 · SymbolicNumericInt
 
 - **Differentiation** (`Symbolics.derivative`/`Differential`) and **Taylor series** (`Symbolics.taylor`, exact rationals; or `TaylorSeries.Taylor1`) work cleanly — the genuinely mechanical operations.
 - `Symbolics.symbolic_solve`: trig/exponential equations solve **natively** (`sin(x) ~ 0` → `2πn`); **polynomials require `using Nemo`** — without it even `x^2 - 2` errors.
-- **`limit`: no working drop-in.** `Symbolics.limit` is extension-gated behind `SymbolicLimits.jl` (not in the env) and is a Gruntz/at-infinity engine — it does **not** cover SymPy's finite one-sided `limit(f, x, c, dir)`. Rewrite limits onto the numeric path (class **L**).
+- **Judge capabilities by ecosystem, not core.** Symbolics deliberately composes with companion packages (`SymbolicLimits` for limits, `Nemo` for polynomial solving, SymbolicUtils `@rule` for missing rewrites). Test the composing package before declaring a gap — the original "no working drop-in for `limit`" claim below was wrong precisely because it was asserted without running `SymbolicLimits`.
+- **Symbolic limits via `SymbolicLimits.jl` — works, with sharp edges** (verified 2026-08-16, SymbolicLimits v1.1.5; supersedes the earlier "Gruntz/at-infinity only, rewrite everything numerically" claim, which was false — it computes finite two-sided/one-sided limits):
+  - **API:** `SymbolicLimits.limit(expr, var, c[, :left|:right|:both])` returns a `(value, assumptions)` **tuple** — take `[1]`. **Unwrap both** `expr` and `var` (`Symbolics.unwrap`): a `Num` expr silently hits a fallback method that returns the input unchanged (looks like "declined to compute").
+  - **DANGER — silent wrong answer:** a raw polynomial `0/0` difference quotient returns **`0`** with no error (`((x+h)^5 - x^5)/h → 0`, not `5x^4`). **Cancel first** — `simplify(expand(dq))` — after which both `SymbolicLimits.limit` and plain `substitute(h => 0)` give the right answer (and the cancellation *is* the textbook derivation, so show it). Numerically sanity-check every symbolic limit with CWJS `lim` when first porting a site.
+  - **Works raw:** exp/log/rational quotients — `(exp(x+h)-exp(x))/h → exp(x)`, `(log(x+h)-log(x))/h → 1/x`, `(1/(x+h)-1/x)/h → -1/x²` — and at-infinity Gruntz limits (`log(x)/x → 0`).
+  - **Not implemented (loud, honest errors):** *any* trig anywhere in the expression (even as coefficients of the non-limit variable), `sqrt`, non-integer powers (`(1+1/x)^x` → "transform to log/exp"). It is a log-exp engine by design.
+  - **Missing identities → SymbolicUtils `@rule`.** There is still no `expand_trig`, but a one-line rule performs the rewrite live: `@rule sin(~a + ~b) => sin(~a)*cos(~b) + cos(~a)*sin(~b)` turns `sin(x+h)` into the addition-formula form (apply via `Postwalk`/`Chain`, or directly for a top-level match). Prefer showing the rule in the notes over "we apply the formula by hand".
+  - **Trig first-principles pattern:** after the `@rule` expansion, `[sin]'`/`[cos]'` reduce to the two fundamental limits `sin(h)/h → 1` and `(1-cos(h))/h → 0`, which no current package computes symbolically — keep the numeric table / geometric argument for *those two only*. (`Symbolics.taylor` in `h` + `substitute(h=>0)` also yields `cos(x)` / `-sin(x)` exactly — a good cross-check, but circular as a *proof*, since Taylor coefficients presuppose the derivative.)
+  - **`sqrt` dq:** conjugate trick, then `substitute(h => 0)` → `1/(2√x)`. (SymbolicLimits can't.)
 - `SymbolicNumericIntegration.integrate`: returns `(solved, unsolved, err)`. Integration by parts (`e^x*sin(x)` ✓) and polynomials work; **fails (`err=Inf`) on `1/(1+x^2)` (arctan), `1/(x*log(x))`, and even `4x/√(x^2+1)`** — expect many gaps across `integrals/`; check chapter-by-chapter.
 - The full `Symbolics`+`SymbolicNumericIntegration`(+`Nemo`) chain is pure Julia.
 
@@ -43,6 +51,7 @@ Verified live 2026-07-20 (Julia 1.12.6 · Symbolics 7.32.1 · SymbolicNumericInt
 using CalculusWithJuliaSquared   # brings Plots, Symbolics, Roots, calculus utilities (incl. `lim`)
 using Nemo                       # only if the chapter solves polynomial equations
 using Richardson                 # only if a limit chapter uses numeric extrapolation
+using SymbolicLimits             # only if the chapter takes symbolic limits (add SymbolicUtils too if it writes @rule rewriters)
 ```
 
 Never alongside `using CalculusWithJulia` or `using SymPy` in the same chapter. CWJS reexports mean no separate `using Plots`/`using Symbolics`. What CWJS provides: see "What CalculusWithJuliaSquared Provides" in the Calculus repo's copilot-instructions, or the package's own docs.
