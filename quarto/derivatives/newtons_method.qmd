@@ -7,11 +7,8 @@ This section uses these add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
-using SymPy
-using Roots
 ```
 
 
@@ -136,7 +133,7 @@ $$
 x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}.
 $$
 
-Using automatic derivatives, as brought in with the `CalculusWithJulia` package, we can implement this algorithm.
+Using automatic derivatives, as brought in with the `CalculusWithJuliaSquared` package, we can implement this algorithm.
 
 
 The algorithm above starts at $2$ and then becomes:
@@ -201,7 +198,7 @@ In the example above, we kept track of the previous values. This is unnecessary 
 ```{julia}
 #| hold: true
 xₙ = reduce((x, step) -> x - f(x)/f'(x), 1:4, init=2)
-xₙ, f(xₙ)
+xₙ, round(f(xₙ); digits=5) + 0.0
 ```
 
 In practice, the algorithm is implemented not by repeating the update step a fixed number of times, rather by repeating the step until either we converge or it is clear we won't converge. For good guesses and most functions, convergence happens quickly.
@@ -382,13 +379,12 @@ b.create('functiongraph', [f, -1.5, 1.5])
 ##### Example: numeric not algebraic
 
 
-For the function $f(x) = \cos(x) - x$, we see that SymPy can not solve symbolically for a zero:
+For the function $f(x) = \cos(x) - x$, we see that Symbolics can not solve symbolically for a zero — `symbolic_solve` returns `nothing`:
 
 
 ```{julia}
-#| error: true
-@syms x::real
-solve(cos(x) - x, x)
+@variables x
+@show symbolic_solve(cos(x) - x, x)
 ```
 
 We can find a numeric solution, even though there is no closed-form answer. Here we try Newton's method:
@@ -403,7 +399,7 @@ x = x - f(x)/f'(x)  # 0.7391416661498792
 x = x - f(x)/f'(x)  # 0.7390851339208068
 x = x - f(x)/f'(x)  # 0.7390851332151607
 x = x - f(x)/f'(x)
-x, f(x)
+x, round(f(x); digits=5) + 0.0
 ```
 
 To machine tolerance the answer is a zero, even though the exact answer is irrational and all finite floating point values can be represented as rational numbers.
@@ -423,7 +419,7 @@ x = 1
 x = x - f(x) / fp(x)
 x = x - f(x) / fp(x)
 x = x - f(x) / fp(x)
-x, f(x)
+x, round(f(x); digits=5) + 0.0
 ```
 
 
