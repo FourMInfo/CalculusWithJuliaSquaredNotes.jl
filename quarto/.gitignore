@@ -1,6 +1,9 @@
 /.quarto/
 /_book/
-/_freeze/
+# _freeze/ is COMMITTED on purpose: the deploy workflow renders the book from these
+# frozen results, so CI assembles HTML without running Julia (and therefore without
+# Python, which the unported chapters would otherwise drag in). Re-ignore it once the
+# port is complete and CI can execute chapters itself.
 /*/*_files/
 /*/*.ipynb/
 /*/bonepile.qmd

@@ -1,0 +1,78 @@
+name: Deploy book
+
+# Publishes the rendered book into the hub site at fourm.info/cwjsn/.
+#
+# No Julia and no Python run here. The book is rendered from the `_freeze/` results
+# committed alongside the sources, so this job only assembles HTML. That is deliberate:
+# unported chapters still import SymPy, and executing them in CI would drag Python into
+# the pipeline of a fork whose entire purpose is to remove it. Once the port is complete,
+# this can be replaced by a normal render-in-CI workflow and `_freeze/` re-ignored.
+#
+# See math_tech_study/.github/instructions/subrepo-docs-publishing.instructions.md —
+# in particular: `cwjsn` MUST be present in that repo's Deploy.yml backup AND restore
+# lists, or the next hub deploy silently deletes everything published here.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'quarto/**'
+      - '.github/workflows/deploy-book.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-book
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render the book from frozen results
+        working-directory: quarto
+        run: quarto render --to html
+
+      - name: Fail if a chapter was not frozen
+        working-directory: quarto
+        run: |
+          # A missing freeze would have needed Julia; without it Quarto emits an empty or
+          # partial book rather than failing loudly, so check explicitly.
+          test -s _book/index.html || { echo "::error::_book/index.html missing or empty"; exit 1; }
+          count=$(find _book -name '*.html' | wc -l)
+          echo "rendered $count pages"
+          [ "$count" -ge 6 ] || { echo "::error::expected at least 6 pages, got $count"; exit 1; }
+
+      - name: Publish into math_tech_study gh-pages under cwjsn/
+        env:
+          DEPLOY_KEY: ${{ secrets.DOCUMENTER_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # DOCUMENTER_KEY is the base64 form produced by DocumenterTools.genkeys()
+          echo "$DEPLOY_KEY" | base64 -d > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes"
+
+          git clone --depth=1 --branch=gh-pages \
+            git@github.com:FourMInfo/math_tech_study.git "$RUNNER_TEMP/hub"
+
+          # Replace only our own subdirectory; siblings are never touched.
+          rm -rf "$RUNNER_TEMP/hub/cwjsn"
+          mkdir -p "$RUNNER_TEMP/hub/cwjsn"
+          cp -R quarto/_book/. "$RUNNER_TEMP/hub/cwjsn/"
+
+          cd "$RUNNER_TEMP/hub"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A cwjsn
+          if git diff --cached --quiet; then
+            echo "no changes to publish"
+          else
+            git commit -m "Deploy CWJSN book from ${GITHUB_SHA::7}"
+            git push
+          fi
