@@ -458,12 +458,18 @@ symlimit(dq, h, 0)
 That is, $f'(x) = 5x^4$.
 
 ::: {.callout-warning}
-## Cancel first, then take the limit
+## The expansion is load-bearing
 
-Handing `SymbolicLimits` the *uncancelled* quotient `((x+h)^5 - x^5)/h` returns `0` -- no
-error, just a wrong answer. The `simplify(expand(...))` step above is not tidying: it is
-what makes the limit correct. When a difference quotient is still in $0/0$ form, cancel
-the $h$ before taking any limit, and sanity-check the result numerically.
+Notice the order of operations above: we expanded and cancelled the $h$ *first*, and only
+then took the limit. That is not merely presentation. Had we skipped straight to the limit
+of the difference quotient in its raw $0/0$ form -- `symlimit(((x+h)^5 - x^5)/h, h, 0)` --
+`SymbolicLimits` would have answered `0`: no error, no warning, just a wrong answer.
+
+What makes the limit correct is that the cancellation has already turned the quotient into
+an ordinary polynomial, which is perfectly well behaved at $h = 0$. So: cancel a $0/0$
+quotient before taking its limit, and check a new result numerically the first time.
+Happily, the algebra the tooling needs here is the same binomial expansion we would do by
+hand anyway.
 :::
 
 
