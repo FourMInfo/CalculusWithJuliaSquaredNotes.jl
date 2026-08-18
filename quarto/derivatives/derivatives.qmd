@@ -457,24 +457,17 @@ symlimit(dq, h, 0)
 
 That is, $f'(x) = 5x^4$.
 
-::: {.callout-warning}
+::: {.callout-note}
 ## Expand and cancel before taking the limit
 
 Notice the order of operations above: we expanded the numerator, divided by $h$, and let
 the $h$ cancel -- and only *then* took the limit. That order is not merely presentation.
-Had we gone straight to the limit of the difference quotient in its raw $0/0$ form --
-`symlimit(((x+h)^5 - x^5)/h, h, 0)` -- `SymbolicLimits` would have answered `0`: no error,
-no warning, just a wrong answer.
 
 The two steps do different jobs. **Expanding** is what makes the cancellation *possible*:
 $(x+h)^5 - x^5$ is not visibly divisible by $h$ until it is written out term by term.
 **Cancelling** is then what clears the $0/0$: once every term has surrendered its $h$,
 what remains is an ordinary polynomial, perfectly well behaved at $h = 0$ -- and that is
 something the limit can act on.
-
-So: expand and cancel a $0/0$ quotient before taking its limit, and check a new result
-numerically the first time. Happily, the algebra the tooling needs is the same binomial
-expansion we would do by hand anyway.
 :::
 
 
