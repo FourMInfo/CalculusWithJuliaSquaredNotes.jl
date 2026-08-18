@@ -7,6 +7,7 @@ This section uses these add-on packages:
 
 
 ```{julia}
+#| output: false
 using CalculusWithJuliaSquared
 import SymbolicLimits            # symbolic limits: a companion package to Symbolics
 using SymbolicUtils: @rule       # just the rule macro, to avoid name clashes
