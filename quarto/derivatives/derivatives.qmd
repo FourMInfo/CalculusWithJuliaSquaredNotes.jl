@@ -8,6 +8,8 @@ This section uses these add-on packages:
 
 ```{julia}
 using CalculusWithJuliaSquared
+import SymbolicLimits            # symbolic limits: a companion package to Symbolics
+using SymbolicUtils: @rule       # just the rule macro, to avoid name clashes
 plotly()
 ```
 
@@ -436,10 +438,32 @@ All terms have an `h` in them, so we cancel it out:
 
 
 ```{julia}
-simplify(expand(ex/h))
+dq = simplify(expand(ex/h))
 ```
 
-We see the lone term `5x^4` without an $h$, so as we let $h$ go to $0$, this will be the limit. That is, $f'(x) = 5x^4$.
+We see the lone term `5x^4` without an $h$; every other term still carries one, so as we let
+$h$ go to $0$ they all vanish. Rather than assert that, we can take the limit. `Symbolics`
+gets symbolic limits from a companion package, `SymbolicLimits`, whose `limit` wants
+unwrapped expressions and returns a `(value, assumptions)` pair -- so we wrap it once for
+convenience:
+
+
+```{julia}
+symlimit(ex, v, c) = SymbolicLimits.limit(Symbolics.unwrap(ex), Symbolics.unwrap(v), c)[1]
+
+symlimit(dq, h, 0)
+```
+
+That is, $f'(x) = 5x^4$.
+
+::: {.callout-warning}
+## Cancel first, then take the limit
+
+Handing `SymbolicLimits` the *uncancelled* quotient `((x+h)^5 - x^5)/h` returns `0` -- no
+error, just a wrong answer. The `simplify(expand(...))` step above is not tidying: it is
+what makes the limit correct. When a difference quotient is still in $0/0$ form, cancel
+the $h$ before taking any limit, and sanity-check the result numerically.
+:::
 
 
 For  integer-valued, positive, $n$, the binomial theorem gives an expansion $(x+h)^n = x^n + nx^{n-1}\cdot h^1 + n\cdot(n-1)x^{n-2}\cdot h^2 + \cdots$. Subtracting $x^n$ then dividing by $h$ leaves just the term $nx^{n-1}$ without a power of $h$, so the limit, in general, is just this term. That is:
@@ -458,22 +482,30 @@ It isn't a special case, but when $n=0$, we also have the above formula applies,
 We need to consider the difference $\sin(x+h) - \sin(x)$:
 
 
-`Symbolics` has no trig expander -- there is no `expand_trig`, and `simplify` will not
-rewrite $\sin(x+h)$ -- so we apply the angle-addition formula
-$\sin(x+h) = \sin(x)\cos(h) + \sin(h)\cos(x)$ by hand:
+`Symbolics` has no built-in trig expander -- there is no `expand_trig`, and `simplify` will
+not rewrite $\sin(x+h)$ on its own. It does, however, expose the rewriting engine
+underneath it, so we can supply the missing identity ourselves. Here the angle-addition
+formula is written once as a rule and applied:
 
+
+```{julia}
+angle_addition = @rule sin(~a + ~b) => sin(~a)*cos(~b) + cos(~a)*sin(~b)
+angle_addition(sin(x + h))
+```
+
+The `~a` and `~b` are pattern variables: they match whatever appears in those positions.
+With the identity available, the difference $\sin(x+h) - \sin(x)$ becomes:
+
+
+```{julia}
+simplify(angle_addition(sin(x + h)) - sin(x))
+```
+
+which is the rearrangement
 
 $$
 \sin(x + h) - \sin(x) = \cos(x)\sin(h) - \sin(x)\cdot(1 - \cos(h)).
 $$
-
-We can at least spot-check that rearrangement numerically:
-
-
-```{julia}
-a, b = 1.23, 0.45        # sample values for x and h
-sin(a + b) - sin(a), cos(a)*sin(b) - sin(a)*(1 - cos(b))
-```
 
 
 We could then rearrange the secant line slope formula to become:
@@ -483,9 +515,14 @@ $$
 \cos(x) \cdot \frac{\sin(h)}{h} + \sin(x) \cdot \frac{\cos(h) - 1}{h}
 $$
 
-and take a limit. `Symbolics` has no finite `limit`, so in place of a symbolic answer we
-gather numeric evidence, in two steps. First, watch the difference quotient converge at a
-sample value of $x$:
+and take a limit. That reduces the whole question to two fundamental limits,
+$\lim_{h\to 0} \sin(h)/h = 1$ and $\lim_{h\to 0} (\cos(h)-1)/h = 0$; granting those, the
+expression tends to $\cos(x) \cdot 1 + \sin(x) \cdot 0 = \cos(x)$.
+
+Those two limits are exactly where the symbolic tooling stops: `SymbolicLimits` is a
+log-exponential engine and does not implement trigonometric functions at all. So here --
+unlike the power rule above -- we gather numeric evidence, in two steps. First, watch the
+difference quotient converge at a sample value of $x$:
 
 
 ```{julia}
@@ -526,7 +563,16 @@ $$
 As noted earlier, Cauchy saw the limit as $u$ goes to $0$ of $f(u) = (1 + u)^{1/u}$ is $e$. Re-expressing the above we can get $1/x \cdot \log(f(h/x))$. The limit as $h$ goes to $0$ of this is found from the composition rules for limits: as $\lim_{h \rightarrow 0} f(h/x) = e$, and since $\log(x)$ is continuous at $e$ we get this expression has a limit of $1/x$.
 
 
-We verify numerically, the same way -- first the convergence at a sample $x$:
+Logarithms, unlike the trigonometric case, are within `SymbolicLimits`' reach, so here we
+can simply take the limit -- and this quotient needs no rearranging first:
+
+
+```{julia}
+symlimit((log(x + h) - log(x))/h, h, 0)
+```
+
+confirming $[\log(x)]' = 1/x$. The numeric view is still worth seeing, since it shows the
+same answer arriving as a *sequence* -- first the convergence at a sample $x$:
 
 
 ```{julia}
@@ -552,6 +598,14 @@ $$
 $$
 
 Earlier,  we saw that $\lim_{h \rightarrow 0}(e^h - 1)/h = 1$. With this, we get $[e^x]' = e^x$, that is it is a function satisfying $f'=f$.
+
+Exponentials are also within reach of `SymbolicLimits`, so this derivative can be confirmed
+directly -- and, like the logarithm, straight from the difference quotient:
+
+
+```{julia}
+symlimit((exp(x + h) - exp(x))/h, h, 0)
+```
 
 
 ---
