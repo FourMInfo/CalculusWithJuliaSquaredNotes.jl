@@ -24,114 +24,125 @@ book:
     collapse-level: 1
   page-footer: "Copyright 2022-25, John Verzani"
   chapters:
+    # ─── PUBLISHED ───────────────────────────────────────────────────────────
+    # Only chapters ported off SymPy appear in the built book. Each renders from
+    # a committed `_freeze/` result, so CI assembles HTML without running Julia —
+    # and therefore without Python, which is the whole point of the port.
+    # To publish a newly ported chapter, move its line out of the archive below.
     - index.qmd
-    - part: basics.qmd
-      chapters:
-        - basics/calculator.qmd
-        - basics/variables.qmd
-        - basics/numbers_types.qmd
-        - basics/logical_expressions.qmd
-        - basics/vectors.qmd
-        - basics/ranges.qmd
-    - part: precalc.qmd
-      chapters:
-        - precalc/functions.qmd
-        - precalc/plotting.qmd
-        - precalc/transformations.qmd
-        - precalc/inversefunctions.qmd
-        - precalc/polynomial.qmd
-        - precalc/polynomial_roots.qmd
-        - precalc/polynomials_package.qmd
-        - precalc/rational_functions.qmd
-        - precalc/exp_log_functions.qmd
-        - precalc/trig_functions.qmd
-        - precalc/julia_overview.qmd
-
-    - part: limits.qmd
-      chapters:
-        - limits/limits.qmd
-        - limits/limits_extensions.qmd
-        - limits/sequences_series.qmd
-        - limits/continuity.qmd
-        - limits/intermediate_value_theorem.qmd
 
     - part: derivatives.qmd
       chapters:
         - derivatives/derivatives.qmd
         - derivatives/numeric_derivatives.qmd
         - derivatives/symbolic_derivatives.qmd
-        - derivatives/mean_value_theorem.qmd
-        - derivatives/optimization.qmd
-        - derivatives/first_second_derivatives.qmd
-        - derivatives/curve_sketching.qmd
-        - derivatives/linearization.qmd
         - derivatives/newtons_method.qmd
-        - derivatives/more_zeros.qmd
-        - derivatives/lhospitals_rule.qmd
-        - derivatives/implicit_differentiation.qmd
-        - derivatives/related_rates.qmd
-        - derivatives/taylor_series_polynomials.qmd
 
-    - part: integrals.qmd
-      chapters:
-        - integrals/area.qmd
-        - integrals/ftc.qmd
-        - integrals/substitution.qmd
-        - integrals/integration_by_parts.qmd
-        - integrals/partial_fractions.qmd
-        - integrals/improper_integrals.qmd
-        - integrals/mean_value_theorem.qmd
-        - integrals/area_between_curves.qmd
-        - integrals/center_of_mass.qmd
-        - integrals/volumes_slice.qmd
-        - integrals/arc_length.qmd
-        - integrals/surface_area.qmd
-        - integrals/orthogonal_polynomials.qmd
-        - integrals/twelve-qs.qmd
-
-    - part: ODEs.qmd
-      chapters:
-        - ODEs/odes.qmd
-        - ODEs/euler.qmd
-        - ODEs/solve.qmd
-        - ODEs/differential_equations.qmd
-
-    - part: differentiable_vector_calculus.qmd
-      chapters:
-        - differentiable_vector_calculus/polar_coordinates.qmd
-        - differentiable_vector_calculus/vectors.qmd
-        - differentiable_vector_calculus/vector_valued_functions.qmd
-        - differentiable_vector_calculus/scalar_functions.qmd
-        - differentiable_vector_calculus/scalar_functions_applications.qmd
-        - differentiable_vector_calculus/vector_fields.qmd
-        - differentiable_vector_calculus/matrix_calculus_notes.qmd
-        - differentiable_vector_calculus/plots_plotting.qmd
-
-    - part: integral_vector_calculus.qmd
-      chapters:
-        - integral_vector_calculus/double_triple_integrals.qmd
-        - integral_vector_calculus/line_integrals.qmd
-        - integral_vector_calculus/div_grad_curl.qmd
-        - integral_vector_calculus/stokes_theorem.qmd
-        - integral_vector_calculus/review.qmd
-
-    - part: alternatives.qmd
-      chapters:
-        - alternatives/symbolics.qmd
-        - alternatives/SciML.qmd
-        #- alternatives/interval_arithmetic.qmd
-        - alternatives/plotly_plotting.qmd
-        - alternatives/makie_plotting.qmd
-
-    - part: "Appendices"
-      chapters:
-        - misc/getting_started_with_julia.qmd
-        - misc/julia_interfaces.qmd
-        - misc/calculus_with_julia.qmd
-        - misc/unicode.qmd
-        - misc/quick_notes.qmd
-        # - misc/bibliography.qmd
-    - references.qmd
+    # ─── NOT YET PORTED (archive of the upstream chapter list) ───────────────
+    # These still import SymPy; rendering them would need Python and every
+    # chapter-group environment. Uncomment a line when its chapter is ported.
+    #- part: basics.qmd
+    #  chapters:
+    #    - basics/calculator.qmd
+    #    - basics/variables.qmd
+    #    - basics/numbers_types.qmd
+    #    - basics/logical_expressions.qmd
+    #    - basics/vectors.qmd
+    #    - basics/ranges.qmd
+    #- part: precalc.qmd
+    #  chapters:
+    #    - precalc/functions.qmd
+    #    - precalc/plotting.qmd
+    #    - precalc/transformations.qmd
+    #    - precalc/inversefunctions.qmd
+    #    - precalc/polynomial.qmd
+    #    - precalc/polynomial_roots.qmd
+    #    - precalc/polynomials_package.qmd
+    #    - precalc/rational_functions.qmd
+    #    - precalc/exp_log_functions.qmd
+    #    - precalc/trig_functions.qmd
+    #    - precalc/julia_overview.qmd
+    #
+    #- part: limits.qmd
+    #  chapters:
+    #    - limits/limits.qmd
+    #    - limits/limits_extensions.qmd
+    #    - limits/sequences_series.qmd
+    #    - limits/continuity.qmd
+    #    - limits/intermediate_value_theorem.qmd
+    #
+    #  chapters:
+    #    - derivatives/mean_value_theorem.qmd
+    #    - derivatives/optimization.qmd
+    #    - derivatives/first_second_derivatives.qmd
+    #    - derivatives/curve_sketching.qmd
+    #    - derivatives/linearization.qmd
+    #    - derivatives/more_zeros.qmd
+    #    - derivatives/lhospitals_rule.qmd
+    #    - derivatives/implicit_differentiation.qmd
+    #    - derivatives/related_rates.qmd
+    #    - derivatives/taylor_series_polynomials.qmd
+    #
+    #- part: integrals.qmd
+    #  chapters:
+    #    - integrals/area.qmd
+    #    - integrals/ftc.qmd
+    #    - integrals/substitution.qmd
+    #    - integrals/integration_by_parts.qmd
+    #    - integrals/partial_fractions.qmd
+    #    - integrals/improper_integrals.qmd
+    #    - integrals/mean_value_theorem.qmd
+    #    - integrals/area_between_curves.qmd
+    #    - integrals/center_of_mass.qmd
+    #    - integrals/volumes_slice.qmd
+    #    - integrals/arc_length.qmd
+    #    - integrals/surface_area.qmd
+    #    - integrals/orthogonal_polynomials.qmd
+    #    - integrals/twelve-qs.qmd
+    #
+    #- part: ODEs.qmd
+    #  chapters:
+    #    - ODEs/odes.qmd
+    #    - ODEs/euler.qmd
+    #    - ODEs/solve.qmd
+    #    - ODEs/differential_equations.qmd
+    #
+    #- part: differentiable_vector_calculus.qmd
+    #  chapters:
+    #    - differentiable_vector_calculus/polar_coordinates.qmd
+    #    - differentiable_vector_calculus/vectors.qmd
+    #    - differentiable_vector_calculus/vector_valued_functions.qmd
+    #    - differentiable_vector_calculus/scalar_functions.qmd
+    #    - differentiable_vector_calculus/scalar_functions_applications.qmd
+    #    - differentiable_vector_calculus/vector_fields.qmd
+    #    - differentiable_vector_calculus/matrix_calculus_notes.qmd
+    #    - differentiable_vector_calculus/plots_plotting.qmd
+    #
+    #- part: integral_vector_calculus.qmd
+    #  chapters:
+    #    - integral_vector_calculus/double_triple_integrals.qmd
+    #    - integral_vector_calculus/line_integrals.qmd
+    #    - integral_vector_calculus/div_grad_curl.qmd
+    #    - integral_vector_calculus/stokes_theorem.qmd
+    #    - integral_vector_calculus/review.qmd
+    #
+    #- part: alternatives.qmd
+    #  chapters:
+    #    - alternatives/symbolics.qmd
+    #    - alternatives/SciML.qmd
+    #    #- alternatives/interval_arithmetic.qmd
+    #    - alternatives/plotly_plotting.qmd
+    #    - alternatives/makie_plotting.qmd
+    #
+    #- part: "Appendices"
+    #  chapters:
+    #    - misc/getting_started_with_julia.qmd
+    #    - misc/julia_interfaces.qmd
+    #    - misc/calculus_with_julia.qmd
+    #    - misc/unicode.qmd
+    #    - misc/quick_notes.qmd
+    #    # - misc/bibliography.qmd
+    #- references.qmd
 
 execute-dir: project
 
