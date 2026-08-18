@@ -1,4 +1,4 @@
-version: "0.25"
+version: "0.25+cwjsn.1"   # upstream release this is derived from + fork revision
 engines: ['julia']
 
 project:
@@ -8,8 +8,8 @@ comments:
   hypothesis: true
 
 book:
-  title: "Calculus with Julia"
-  author: "John Verzani"
+  title: "Calculus with Julia Squared"
+  author: "John Verzani (original notes) · Aron T (pure-Julia port)"
   date: now
   search: true
   repo-url: https://github.com/FourMInfo/CalculusWithJuliaSquaredNotes.jl
@@ -22,7 +22,7 @@ book:
     pinned: false
   sidebar:
     collapse-level: 1
-  page-footer: "Copyright 2022-25, John Verzani"
+  page-footer: "Based on *Calculus with Julia*, Copyright 2022-25, John Verzani and contributors (MIT). Pure-Julia port Copyright 2026, Aron T."
   chapters:
     # ─── PUBLISHED ───────────────────────────────────────────────────────────
     # Only chapters ported off SymPy appear in the built book. Each renders from
