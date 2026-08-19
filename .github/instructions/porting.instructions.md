@@ -73,11 +73,38 @@ Rendered output lands in `_book/` (gitignored), not beside the `.qmd`.
 - `typos` clean
 - Math output verified against the upstream published page for the same chapter (results should match, not just run). Where the port *deliberately* diverges (classes **L**/**I** — see "Choosing What to Show"), identical output is not the standard: verify the mathematics independently and make the divergence explicit in the prose.
 
+## Publishing a ported chapter
+
+The book is live at <https://fourm.info/cwjsn/>, serving **only** the chapters ported so far.
+Publishing one is part of finishing it, not a separate project.
+
+**How the deploy works.** `.github/workflows/deploy-book.yml` fires on any push to `main`
+touching `quarto/**` (or by manual dispatch). It renders the book **from the committed
+`_freeze/` results** and pushes the output into `math_tech_study`'s `gh-pages` under `cwjsn/`.
+No Julia and no Python run in CI — deliberate, since unported chapters still import `SymPy`
+and executing them would drag Python into a fork whose purpose is removing it.
+
+**To publish a newly ported chapter — one commit, three parts:**
+
+1. **Render it locally.** That writes `quarto/_freeze/<group>/<chapter>/execute-results/html.json`,
+   which is the executed output CI will assemble.
+2. **Promote it in `quarto/_quarto.yml`** — move its line out of the commented "NOT YET PORTED"
+   archive into the published list above it.
+3. **Commit the `_freeze/` file *and* `_quarto.yml` together**, then push to `main`.
+
+Forgetting the `_freeze/` file is the trap: CI cannot execute anything, so that chapter has no
+output to assemble. The workflow's page-count guard turns this into a loud failure rather than
+a silently partial book.
+
+**Transitional.** Once `SymPy` is gone from every group's `Project.toml`, CI can instantiate the
+(pure-Julia) environments and render from source like a normal Quarto book, and `_freeze/` can
+go back to being ignored.
+
 ## Render discipline (Quarto can hang — guarantee liveness)
 
 - **One chapter at a time**: `quarto render <chapter>.qmd`, never the whole book to check a port. Each `.qmd` → its own `.html`; a hang in one render can't touch other chapters' already-built outputs.
 - **Always wrap in a wall-clock timeout**: `timeout 1200 quarto render <chapter>.qmd`. Renders occasionally spin at 100% CPU forever (observed post-execution, in plotly/HTML serialization). A wall-clock timeout is the only guaranteed catch — it covers execution, serialization, and embedding alike. If it trips, the render is STUCK: kill and find the offending cell; don't blindly re-run.
-- **`freeze: auto` is on** (`_quarto.yml`): a chapter that renders cleanly once is cached in `_freeze/`; re-runs reuse it, so full-book renders resume rather than restart. (`_freeze/` is gitignored — local-only, won't carry to CI unless committed.)
+- **`freeze: auto` is on** (`_quarto.yml`): a chapter that renders cleanly once is cached in `_freeze/`; re-runs reuse it, so full-book renders resume rather than restart. (**`_freeze/` is committed** as of 2026-08-18 — see "Publishing a ported chapter" below. It used to be gitignored.)
 - **Only the *first* render in a session is slow — iterating is cheap.** The cold render loads the group's whole env (CWJS + Plots + ~25 deps) *and* executes every cell — that's the ~15 min the timeout is sized for. Re-rendering after editing a few cells is **< 1 min**: `_freeze` supplies the untouched cells and QuartoNotebookRunner keeps a warm worker (packages stay loaded), so only the changed cells re-run. (Observed 2026-08-16: a cold render logged `Running [1/93]…[93/93]`; the next, after a 5-cell edit, logged *zero* `Running` lines yet still emitted the updated outputs.) So don't contort the workflow to dodge "a second render" — only the first one is expensive.
 - **Correctness ≠ display**: the port check is (a) all cells execute error-free and (b) output matches upstream — both in the *execution* stage. The stage that hangs is usually HTML/plotly *embedding*, a display concern; a hung embed is not proof the port is wrong. Isolate heavy figures (usually plotly) separately.
 - Per-cell `execute: timeout:` is a possible backstop but UNVERIFIED for the native Julia engine (QuartoNotebookRunner) — the external wall-clock timeout is the reliable mechanism.
