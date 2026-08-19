@@ -7,12 +7,16 @@ This section uses the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
+using Richardson                 # for extrapolation
+import SymbolicLimits            # symbolic limits: a companion package to Symbolics
 plotly()
-using Richardson  # for extrapolation
-using SymPy       # for symbolic limits
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using` of
+its own. `SymbolicLimits` is imported rather than `using`-ed so that its `limit` does not
+collide with other names; the helper defined below wraps it.
 
 
 ---
