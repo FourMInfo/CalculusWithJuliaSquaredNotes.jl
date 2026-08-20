@@ -7,12 +7,16 @@ This section uses the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
+using Richardson                 # for extrapolation
+import SymbolicLimits            # symbolic limits: a companion package to Symbolics
 plotly()
-using Richardson  # for extrapolation
-using SymPy       # for symbolic limits
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using` of
+its own. `SymbolicLimits` is imported rather than `using`-ed so that its `limit` does not
+collide with other names; the helper defined below wraps it.
 
 
 ---
@@ -43,7 +47,6 @@ function make_triangle_graph(n)
     n==5 && (title = L"Area $=$ previous $+\; 8\cdot\frac{1}{8^4}$")
     n==6 && (title = L"Area $=$ previous $+\; 16\cdot\frac{1}{8^5}$")
     n==7 && (title = L"Area $=$ previous $+\; 32\cdot\frac{1}{8^6}$")
-
 
 
     plt = plot(f, 0, 1;
@@ -123,7 +126,6 @@ function archimedes!(p, n, xy=(0,0), radius=1; color=blue)
 
     x₀,y₀=xy
     ts = range(0, 2pi, length=100)
-
 
 
     plot!(p, x₀ .+ sin.(ts), y₀ .+ cos.(ts), linewidth=2)
@@ -755,38 +757,77 @@ extrapolate(f, 10, x0=Inf)
 ## Symbolic approach to limits
 
 
-The `SymPy` package provides a `limit` function for finding the limit of an expression in a given variable. It must be loaded, as was done initially. The `limit` function's use requires the expression, the variable and a value for $c$. (Similar to the three things in the notation $\lim_{x \rightarrow c}f(x)$.)
+`Symbolics` does not compute limits itself. The `symlim` function of
+`CalculusWithJuliaSquared` fills that gap: it takes the expression, the variable and a
+value for $c$ -- the same three things in the notation $\lim_{x \rightarrow c}f(x)$ -- and
+returns a pair, the limit together with the *route* by which it was found.
 
 
-For example, the limit at $0$ of $(1-\cos(x))/x^2$ is easily handled:
+For example, the limit at $0$ of $(1-\cos(x))/x^2$:
 
 
 ```{julia}
-@syms x::real
-limit((1 - cos(x)) / x^2, x => 0)
+@variables x::Real
+symlim((1 - cos(x)) / x^2, x, 0)
 ```
 
-The pair notation (`x => 0`) is used to indicate the variable and the value it is going to. A `dir` argument is used to indicate $x \rightarrow c+$ (the default, or `dir="+"`), $x \rightarrow c-$ (`dir="-"`), and $x \rightarrow c$ (`dir="+-"`).
+The answer is the exact rational $1/2$, and `:series` records how it was obtained. Knowing
+the route matters here in a way it does not with a black box, because the routes have very
+different characters -- and one of them is a package we have to handle with care.
+
+::: {.callout-note}
+## What `symlim` is doing, and why it is staged
+
+Julia's symbolic limits come from `SymbolicLimits`, which implements the *Gruntz algorithm*
+for log-exponential functions **at infinity**. It is very good at that. Away from it,
+as of v1.1.5, it does not cancel common factors, so `limit((x^2-1)/(x-1), x, 1)` returns
+`0` rather than `2` -- and reports its assumptions as satisfied, so nothing warns you.
+
+`symlim` therefore tries the dependable routes first and asks that engine last:
+
+| route | what it did |
+|:--|:--|
+| `:substitution` | the expression was defined at $c$; evaluate it |
+| `:cancel` | a removable singularity; cancel the common factor, then evaluate |
+| `:series` | expand numerator and denominator as Taylor series, compare leading orders |
+| `:gruntz` | hand it to `SymbolicLimits` -- for limits at infinity |
+| `:divergent_numeric` | the values grow without bound |
+| `:unresolved` | no method applied; **no answer is invented** |
+
+The first three are exact and give rationals. `symlim` also cross-checks its answer against
+a numeric probe and warns if the two disagree.
+:::
 
 
 ##### Example
 
 
-We look again at this function which despite having a vertical asymptote at $x=15/11$ has the property that it is positive for all floating point values, making both a numeric and graphical approach impossible:
+We look again at this function which despite having a vertical asymptote at $x=15/11$ has
+the property that it is positive for all floating point values, making both a numeric and
+graphical approach impossible:
 
 
 $$
 h(x) = x^2 + 1 + \log(| 11 \cdot x - 15 |)/99.
 $$
 
-We find the limit symbolically at $c=15/11$ as follows, taking care to use the exact value `15//11` and not the *floating point* approximation returned by `15/11`:
+We find the limit at $c=15/11$ as follows, taking care to use the exact value `15//11` and
+not the *floating point* approximation returned by `15/11`:
 
 
 ```{julia}
 #| hold: true
 h(x) = x^2 + 1 + log(abs(11x - 15))/99
-limit(h(x), x => 15 // 11)
+symlim(h(x), x, 15 // 11)
 ```
+
+The limit is $-\infty$, as the asymptote demands. The route is worth reading: the answer
+came from watching the values grow rather than from algebra. That is not a shortcut -- it is
+the only route available. The absolute value blocks the series expansion, and `SymbolicLimits`
+declines `abs` outright. What makes the numeric evidence trustworthy *here*, when the earlier
+table was so misleading, is that we are no longer asking it for a finite value to five
+decimal places; we are asking whether the values settle at all, and they plainly do not.
+
 
 ##### Example
 
@@ -804,44 +845,62 @@ We have for the first:
 
 
 ```{julia}
-limit( (2sin(x) - sin(2x)) / (x - sin(x)), x => 0; dir="+-")
+symlim((2sin(x) - sin(2x)) / (x - sin(x)), x, 0)
 ```
 
-(The `dir = "+-"` indicates take both a right and left limit and ensure both exist and are equal.)
-
-The second is similarly done, though here we define a function for variety:
+exactly $6$. The second is similarly done, though here we define a function for variety:
 
 
 ```{julia}
 #| hold: true
 f(x) = (exp(x) - 1 - x) / x^2
-limit(f(x), x => 0; dir="+-")
+symlim(f(x), x, 0)
 ```
 
-Finally, for the third we define a new variable and proceed:
+The third involves a parameter, and needs a rewrite first. Taken as written it returns
+nothing at all:
 
 
 ```{julia}
-@syms rho::real
-limit( (x^(1-rho) - 1) / (1 - rho), rho => 1; dir="+-")
+@variables rho::Real
+symlim((x^(1-rho) - 1) / (1 - rho), rho, 1)
 ```
 
-This last limit demonstrates that the `limit` function of `SymPy` can readily evaluate limits that involve parameters, though at times some assumptions on the parameters may be needed, as was done through `rho::real`.
+A power with a symbolic exponent is outside every route: it is not a rational function to
+cancel, and $x^{1-\rho}$ has no series in $\rho$. But $x^{1-\rho}$ is only another way of
+writing $e^{(1-\rho)\log x}$, and *that* is a log-exponential expression -- precisely the
+form the Gruntz engine was built for:
 
 
-However, for some cases, the assumptions will not be enough, as they are broad. (E.g., something might be true for some values of the parameter and not others and these values aren't captured in the assumptions.)  So the user must be mindful that when parameters are involved, the answer may not reflect all possible cases.
+```{julia}
+symlim((exp((1 - rho) * log(x)) - 1) / (1 - rho), rho, 1)
+```
+
+giving $\log(x)$, by the `:gruntz` route. Rewriting an expression into the form a method
+expects is a normal part of symbolic work, not a workaround.
 
 
-##### Example: floating point conversion issues
+##### Example: exact values and where exactness is lost
 
 
-The Gruntz [algorithm](http://www.cybertester.com/data/gruntz.pdf) implemented in `SymPy` for symbolic limits is quite powerful. However, some care must be exercised to avoid undesirable conversions from exact values to floating point values.
+In the example above we used `15//11` and not `15/11`. The distinction is worth dwelling on,
+because it is a place where a correct calculation can silently answer a different question
+than the one intended.
 
 
-In a previous example, we used `15//11` and not `15/11`, as the former converts to an *exact* symbolic value for use in `SymPy`, but the latter would be approximated in floating point *before* this conversion so the exactness would be lost.
+`15//11` is a `Rational`: exact. `15/11` is a `Float64`: the nearest representable number to
+$15/11$, which is not $15/11$. Substituting each into $11x - 15$ shows the difference:
 
 
-To illustrate further, let's look at the limit as $x$ goes to $\pi/2$ of $j(x) = \cos(x) / (x - \pi/2)$. We follow our past practice:
+```{julia}
+substitute(11x - 15, Dict(x => 15 // 11)), substitute(11x - 15, Dict(x => 15 / 11))
+```
+
+The first is exactly zero. The second is not -- and at that point the asymptote we were
+studying is no longer at the point we are asking about.
+
+
+The same trap is set by $\pi$. Consider $j(x) = \cos(x)/(x - \pi/2)$ near $\pi/2$:
 
 
 ```{julia}
@@ -849,49 +908,63 @@ j(x) = cos(x) / (x - pi/2)
 j(pi/2)
 ```
 
-The value is not `NaN`, rather `Inf`. This is because `cos(pi/2)` is not exactly $0$ as it should be mathematically, as `pi/2` is rounded to a floating point number. This minor difference is important. If we try and correct for this by using `PI` we have:
+The value is `Inf`, not `NaN`, because `cos(pi/2)` is not exactly $0$: `pi/2` is a rounded
+floating point number. In `Symbolics`, `pi` on its own *is* kept exact -- but only until
+Julia does arithmetic on it:
 
 
 ```{julia}
-limit(j(x), x => PI/2)
+substitute(cos(x), Dict(x => Num(pi)/2)), substitute(cos(x), Dict(x => pi/2))
 ```
 
-The value is not right, as this simple graph suggests the limit is in fact $-1$:
+`Num(pi)/2` stays symbolic as $\pi/2$; plain `pi/2` was divided in floating point *before*
+`Symbolics` ever saw it, and arrives as `1.5707963267948966`. The rule that follows is
+simple: **build exact values with `//` and `Num(pi)`, and never let Julia evaluate a
+constant expression first.**
+
+
+This particular limit is one we must take numerically. Expanding a series about $\pi/2$
+requires `Symbolics.taylor` to place $\pi$ in the coefficients, and it converts it to a
+float; the expansion is then contaminated from its constant term onward. A graph suggests
+the answer:
 
 
 ```{julia}
 plot(j,  pi/4, 3pi/4)
 ```
 
-The difference between `pi` and `PI` can be significant, and though usually `pi` is silently converted to `PI`, it doesn't happen here as the division by `2` happens first, which turns the symbol into an approximate floating point number. Hence, `SymPy` is giving the correct answer for the problem it is given, it just isn't the problem we wanted to look at.
-
-
-Trying again, being more aware of how `pi` and `PI` differ, we have:
+and the numeric table confirms it, converging on $-1$ from both sides:
 
 
 ```{julia}
-#| hold: true
-f(x) = cos(x) / (x - PI/2)
-limit(f(x), x => PI/2)
+lim(j, pi/2)
 ```
-
-(The value `pi` is able to be exactly converted to `PI` when used in `SymPy`, as it is of type `Irrational`, and is not a floating point value. However, the expression `pi/2` converts `pi` to a floating point value and then divides by `2`, hence the loss of exactness when used symbolically.)
-
 
 ##### Example: left and right limits
 
 
-Right and left limits will be discussed in the next section; here we give an example of the idea.  The mathematical convention is to say a limit exists if both the left *and* right limits exist and are equal. Informally a right (left) limit at $c$ only considers values of $x$ more (less) than $c$. The `limit` function of `SymPy`  finds directional limits by default, a right limit, where $x > c$.
+Right and left limits will be discussed in the next section; here we give an example of the
+idea. The mathematical convention is to say a limit exists if both the left *and* right
+limits exist and are equal. Informally a right (left) limit at $c$ only considers values of
+$x$ more (less) than $c$.
 
 
-The left limit can be found by passing the argument `dir="-"`. Passing `dir="+-"` (and not `"-+"`), as done in a few examples above, will compute the mathematical limit, throwing an error in `Python` if no limit exists.
+The ceiling function shows a case where they differ. Approaching $0$ from the right, every
+value of $\lceil x \rceil$ is $1$; from the left, every value is $0$:
 
 
 ```{julia}
-limit(ceil(x), x => 0), limit(ceil(x), x => 0, dir="-")
+lim(ceil, 0, "+")
 ```
 
-This accurately shows the limit does not exist mathematically, but `limit(ceil(x), x => 0)` does exist (as it finds a right limit).
+```{julia}
+lim(ceil, 0, "-")
+```
+
+The two disagree, so the limit does not exist at $0$ -- though each one-sided limit exists
+perfectly well. `symlim` reports directional limits through `SymbolicLimits` where it can,
+but the ceiling function is not one of the cases it implements, so the numeric tables above
+are what settle it.
 
 
 ## Rules for limits
@@ -991,16 +1064,21 @@ We know the first factor has a limit found by evaluation: $2/\pi$, so it is real
 
 
 ```{julia}
-l(x) = cos(PI*x) / (1 - (2x)^2)
-limit(l(x), x => 1//2)
+l(x) = cos(pi*x) / (1 - (2x)^2)
+lim(l, 1/2)
 ```
 
-Putting together, we would get $1/2$. Which we could have done directly in this case:
+converging on $\pi/4$. Putting together, we would get $1/2$. Which we could have done
+directly in this case:
 
 
 ```{julia}
-limit(sin(PI*x)/(PI*x) * l(x), x => 1//2)
+lim(x -> sin(pi*x)/(pi*x) * l(x), 1/2)
 ```
+
+Both are taken numerically for the reason given earlier: an expansion about $1/2$ puts
+$\pi$ into the series coefficients, where it is converted to a floating point value, so the
+symbolic route is not available here.
 
 ##### Example: ratios
 
@@ -1113,7 +1191,6 @@ ImageFile(imgfile, caption)
 
 
 The formal definition of a limit involves clarifying what it means for $f(x)$ to be "close to $L$" when $x$ is "close to $c$". These are quantified by the inequalities $0 < \lvert x-c\rvert < \delta$ and the $\lvert f(x) - L\rvert < \epsilon$. The second does not have the restriction that it is greater than $0$, as indeed $f(x)$ can equal $L$. The order is important: it says for any idea of close for $f(x)$ to $L$, an idea of close must be found for $x$ to $c$.
-
 
 
 The key is identifying a value for $\delta$  for a given value of $\epsilon$.
@@ -1355,7 +1432,7 @@ p = plot(f, -1, 1)
 ```{julia}
 #| hold: true
 #| echo: false
-val = N(limit((exp(x)-1)/x, x => 0))
+val = 1
 numericq(val, 1e-1)
 ```
 
@@ -1504,7 +1581,7 @@ $$
 #| hold: true
 #| echo: false
 f(x) = (3x^2 - x - 10)/(x^2 - 4);
-val = convert(Float64, N(limit(f(x), x => 2)))
+val = 11/4
 numericq(val)
 ```
 
@@ -1539,7 +1616,7 @@ $$
 #| hold: true
 #| echo: false
 f(x) = (x - 27)/(x^(1//3) - 3)
-val = N(limit(f(x), x => 27))
+val = 27
 numericq(val)
 ```
 
@@ -1556,8 +1633,8 @@ $$
 ```{julia}
 #| hold: true
 #| echo: false
-f(x) = tan(2x)/(x-PI/2)
-val = N(limit(f(x), x => PI/2))
+f(x) = tan(2x)/(x - pi/2)
+val = 2
 numericq(val)
 ```
 
@@ -1680,7 +1757,7 @@ $$
 #| hold: true
 #| echo: false
 f(x) = x/(x-1) - 1/log(x)
-val = convert(Float64, N(limit(f(x), x => 1)))
+val = 1/2
 numericq(val)
 ```
 
@@ -1697,8 +1774,8 @@ $$
 ```{julia}
 #| hold: true
 #| echo: false
-f(x) =  1/PI * cos(PI*x)/(1 - (2x)^2)
-val = convert(Float64, N(limit(f(x), x => 1//2)))
+f(x) = 1/pi * cos(pi*x)/(1 - (2x)^2)
+val = 1/4
 numericq(val)
 ```
 
@@ -1715,8 +1792,12 @@ $$
 ```{julia}
 #| hold: true
 #| echo: false
-f(x) =  (x * sin(sin(x))- sin(x)^2)/x^6
-val = convert(Float64, N(limit(f(x), x => 0)))
+f(x) = (x * sin(sin(x)) - sin(x)^2)/x^6
+# 1/18 exactly: tlim((x*sin(sin(x)) - sin(x)^2), x^6, x) -- the numerator's series is
+# (1//18)x^6 - (1//45)x^8, so it vanishes to exactly the denominator's order. A numeric
+# estimate is worthless here: dividing by x^6 at h=1e-4 means dividing by 1e-24, and the
+# subtractive cancellation returns 0.0.
+val = 1/18
 numericq(val)
 ```
 
@@ -1735,7 +1816,7 @@ $$
 #| hold: true
 #| echo: false
 f(x) = (tan(x) - 24 * tan(x/2)) / (4 * sin(x) - 5 * x)
-val = N(limit(f(x), x => 0))
+val = 11   # tlim(tan(x) - 24tan(x/2), 4sin(x) - 5x, x) gives 11//1 exactly
 numericq(val)
 ```
 
@@ -1747,11 +1828,16 @@ Some limits involve parameters. For example, suppose we define `ex` as follows:
 
 ```{julia}
 #| hold: true
-@syms m::real k::real
+@variables m::Real k::Real
 ex = (1 + k*x)^(m/x)
 ```
 
-What is `limit(ex, x => 0)`?
+What is $\lim_{x \to 0}$ of this expression?
+
+(This one is beyond the tooling: `symlim` returns `:unresolved`. A power with a symbolic
+exponent has no series in `x`, and `SymbolicLimits` does not terminate on this family --
+including on the `exp`/`log` rewrite. It is the $(1+u)^{1/u} \to e$ limit in disguise, so
+reason it out rather than computing it.)
 
 
 ```{julia}
@@ -1799,13 +1885,21 @@ radioq(choices, 2)
 ###### Question
 
 
-What does `SymPy` find for the limit of `ex` (`limit(ex, x => 0)`), as defined here:
+What is the limit at $0$ of `ex`, defined here:
 
 
 ```{julia}
 #| hold: true
-@syms x a
+@variables a::Real
 ex = (a^x - 1)/x
+```
+
+Taken as written, `symlim(ex, x, 0)` is `:unresolved` -- `a^x` has a symbolic exponent. Written
+as $e^{x\log a}$ it is a log-exponential expression, and the limit follows:
+
+
+```{julia}
+symlim((exp(x*log(a)) - 1)/x, x, 0)
 ```
 
 ```{julia}
@@ -1815,12 +1909,12 @@ choices = ["``\\log(a)``", "``a``", "``e^a``", "``e^{-a}``"]
 radioq(choices, 1)
 ```
 
-Should `SymPy` have needed an assumption like
+That answer, $\log(a)$, quietly assumes something about $a$ -- and nothing in the code says
+so. `@variables a::Real` fixes a *type*, not a domain: there is no way to tell `Symbolics`
+that $a$ is positive, and it will hand back $\log(a)$ whatever $a$ may be.
 
+Is the restriction $a > 0$ needed for this limit to mean anything?
 
-```{julia}
-@syms a::positive
-```
 
 ```{julia}
 #| hold: true
@@ -1828,45 +1922,15 @@ Should `SymPy` have needed an assumption like
 yesnoq("yes")
 ```
 
-###### Question
+It is, on three counts. For $a^x$ to be real at every $x$ near $0$ we need $a > 0$: a
+negative base has no real value at fractional exponents -- $(-8)^{1/2}$ is not real -- so
+$a^x$ is not a real function on any interval around $0$, and there is nothing for a limit to
+approach. At $a = 0$ it fails differently: $0^x$ is $0$ for positive $x$ and undefined for
+$x \le 0$, so no two-sided limit exists. And $\log(a)$, the answer itself, is only defined
+for $a > 0$.
 
-The limit
-
-$$
-L= \lim_{x \rightarrow 0} \left(\frac{a^x - x \log(a)}{b^x - x\log(b)}\right)^{1/x^2}
-$$
-
-For $a=3$ and $b=2$
-
-Can be computed symbolically *two* different ways:
-
-```{julia}
-@syms x
-a, b = 3, 2
-f(x) = ((a^x - x*log(a))/(b^x - x*log(b)))^(1/x^2)
-limit(f(x), x=>0)
-```
-
-*or*
-
-```{julia}
-@syms x a b
-f(x) = ((a^x - x*log(a))/(b^x - x*log(b)))^(1/x^2)
-L = limit(f(x), x=>0)
-L(a => 3, b=>2)
-```
-
-Which is correct?
-
-```{julia}
-#| echo: false
-choices = ["The first one", "The second one"]
-explanation = """
-The first one is incorrect, as `log(3)` is evaluated numerically, and not symbolically. The difference between a floating point approximation and the symbolic expression is enough to make the first limit infinite, despite the actual limit being finite.
-"""
-buttonq(choices, 2; explanation=explanation)
-```
-
+So $a > 0$ is not a technicality, but the condition under which the question means
+anything at all -- and here it is carried entirely by the reader, not by the tool.
 
 
 ###### Question: The squeeze theorem
@@ -1905,7 +1969,6 @@ radioq(choices, answ)
 > In many languages (e.g. French, German, Italian, Hungarian and Russian), the squeeze theorem is also known as the two policemen (and a drunk) theorem, or some variation thereof. The story is that if two policemen are escorting a drunk prisoner between them, and both officers go to a cell, then (regardless of the path taken, and the fact that the prisoner may be wobbling about between the policemen) the prisoner must also end up in the cell.
 
 
-
 ###### Question
 
 
@@ -1913,13 +1976,13 @@ Archimedes, in finding bounds on the value of $\pi$ used $n$-gons with sides $12
 
 
 ```{julia}
-@syms theta::real r::real
+@variables theta::Real r::Real
 ```
 
 ```{julia}
 #| hold: true
 x = r * tan(theta/2)
-n = 2PI/theta     # using PI to avoid floating point roundoff in 2pi
+n = 2*Num(pi)/theta   # Num(pi) keeps pi exact; plain 2pi/theta would float it
 # C < n * 2x
 upper = n*2x
 ```
@@ -1930,7 +1993,7 @@ A lower bound would use the triangle with angle $\theta/2$, hypotenuse $r$ and o
 ```{julia}
 #| hold: true
 x = r*sin(theta/2)
-n = 2PI/theta
+n = 2*Num(pi)/theta
 # C > n * 2x
 lower = n*2x
 ```
