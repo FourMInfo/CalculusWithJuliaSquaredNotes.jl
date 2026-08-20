@@ -31,6 +31,10 @@ book:
     # To publish a newly ported chapter, move its line out of the archive below.
     - index.qmd
 
+    - part: limits.qmd
+      chapters:
+        - limits/limits.qmd
+
     - part: derivatives.qmd
       chapters:
         - derivatives/derivatives.qmd
@@ -63,9 +67,8 @@ book:
     #    - precalc/trig_functions.qmd
     #    - precalc/julia_overview.qmd
     #
-    #- part: limits.qmd
+    #- part: limits.qmd          # part page and limits/limits.qmd are PUBLISHED above
     #  chapters:
-    #    - limits/limits.qmd
     #    - limits/limits_extensions.qmd
     #    - limits/sequences_series.qmd
     #    - limits/continuity.qmd

@@ -444,27 +444,22 @@ dq = simplify(expand(ex/h))
 
 We see the lone term `5x^4` without an $h$; every other term still carries one, so as we let
 $h$ go to $0$ they all vanish. Rather than assert that, we can take the limit. `Symbolics`
-gets symbolic limits from a companion package, `SymbolicLimits`, whose `limit` wants
-unwrapped expressions and returns a `(value, assumptions)` pair -- so we wrap it once for
-convenience:
+gets symbolic limits from a companion package, `SymbolicLimits`. `CalculusWithJuliaSquared`
+wraps it as `symlim`, which returns the limit together with the *route* it used:
 
 
 ```{julia}
-symlimit(ex, v, c) = SymbolicLimits.limit(Symbolics.unwrap(ex), Symbolics.unwrap(v), c)[1]
-
-symlimit(dq, h, 0)
+symlim(dq, h, 0)
 ```
 
-That is, $f'(x) = 5x^4$.
+That is, $f'(x) = 5x^4$. The `:substitution` route says the work was already done: once the
+$h$ has been cancelled there is nothing indeterminate left, and the limit is just the value.
 
 ::: {.callout-warning}
 ## Expand and cancel before taking the limit
 
 Notice the order of operations above: we expanded the numerator, divided by $h$, and let
 the $h$ cancel -- and only *then* took the limit. That order is not merely presentation.
-Had we gone straight to the limit of the difference quotient in its raw $0/0$ form --
-`symlimit(((x+h)^5 - x^5)/h, h, 0)` -- `SymbolicLimits` would have answered `0`: no error,
-no warning, just a wrong answer.
 
 The two steps do different jobs. **Expanding** is what makes the cancellation *possible*:
 $(x+h)^5 - x^5$ is not visibly divisible by $h$ until it is written out term by term.
@@ -472,9 +467,21 @@ $(x+h)^5 - x^5$ is not visibly divisible by $h$ until it is written out term by 
 what remains is an ordinary polynomial, perfectly well behaved at $h = 0$ -- and that is
 something the limit can act on.
 
-So: expand and cancel a $0/0$ quotient before taking its limit, and check a new result
-numerically the first time. Happily, the algebra the tooling needs is the same binomial
-expansion we would do by hand anyway.
+`symlim` does exactly this internally, which is why handing it the raw quotient works too:
+
+
+```{julia}
+symlim(((x+h)^5 - x^5)/h, h, 0)
+```
+
+The `:cancel` route is the report that it had to clear a common factor before it could
+answer. The engine underneath it, `SymbolicLimits`, does *not* cancel, and on this input on
+its own it returns `0` -- no error, no warning, just a wrong answer. That is the reason
+`symlim` exists rather than a thin wrapper.
+
+So: expand and cancel a $0/0$ quotient before taking its limit -- by hand when you are
+deriving, and knowing the helper does the same when you are computing. Happily, the algebra
+is the same binomial expansion we would do by hand anyway.
 :::
 
 
@@ -531,10 +538,14 @@ and take a limit. That reduces the whole question to two fundamental limits,
 $\lim_{h\to 0} \sin(h)/h = 1$ and $\lim_{h\to 0} (\cos(h)-1)/h = 0$; granting those, the
 expression tends to $\cos(x) \cdot 1 + \sin(x) \cdot 0 = \cos(x)$.
 
-Those two limits are exactly where the symbolic tooling stops: `SymbolicLimits` is a
-log-exponential engine and does not implement trigonometric functions at all. So here --
-unlike the power rule above -- we gather numeric evidence, in two steps. First, watch the
-difference quotient converge at a sample value of $x$:
+`SymbolicLimits` is a log-exponential engine and does not implement trigonometric functions
+at all, so it cannot supply either one. A Taylor series can -- `symlim` reaches both by its
+`:series` route -- but not *here*, and the reason is worth pausing on: the coefficients of
+the series for $\sin$ are built from its derivatives. Using them to establish
+$[\sin(x)]' = \cos(x)$ would assume exactly what we are deriving.
+
+So here -- unlike the power rule above -- we gather numeric evidence, in two steps. First,
+watch the difference quotient converge at a sample value of $x$:
 
 
 ```{julia}
@@ -580,8 +591,14 @@ can simply take the limit -- and this quotient needs no rearranging first:
 
 
 ```{julia}
-symlimit((log(x + h) - log(x))/h, h, 0)
+symlim((log(x + h) - log(x))/h, h, 0)
 ```
+
+That may look like it contradicts the warning above, since $(\log(x+h) - \log(x))/h$ is
+another $0/0$ form at $h=0$. It does not: `symlim` puts the expression through a series
+expansion before any engine sees it, and for logarithms and exponentials that expansion is
+straightforward. It is *rational* quotients, where a common factor has to be cancelled
+first, that go wrong when handed over raw.
 
 confirming $[\log(x)]' = 1/x$. The numeric view is still worth seeing, since it shows the
 same answer arriving as a *sequence* -- first the convergence at a sample $x$:
@@ -611,12 +628,12 @@ $$
 
 Earlier,  we saw that $\lim_{h \rightarrow 0}(e^h - 1)/h = 1$. With this, we get $[e^x]' = e^x$, that is it is a function satisfying $f'=f$.
 
-Exponentials are also within reach of `SymbolicLimits`, so this derivative can be confirmed
-directly -- and, like the logarithm, straight from the difference quotient:
+Exponentials are also within reach, so this derivative can be confirmed directly -- and,
+like the logarithm, straight from the difference quotient:
 
 
 ```{julia}
-symlimit((exp(x + h) - exp(x))/h, h, 0)
+symlim((exp(x + h) - exp(x))/h, h, 0)
 ```
 
 
