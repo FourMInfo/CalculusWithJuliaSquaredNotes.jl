@@ -134,7 +134,7 @@ We were pretty loose with some key terms. There is a distinction between "speed"
 ##### Example: Galileo's ball and ramp experiment
 
 
-One of history's most famous experiments was performed by [Galileo](http://en.wikipedia.org/wiki/History_of_experiments) where he rolled balls down inclined ramps, making note of distance traveled with respect to time. As Galileo had no ultra-accurate measuring device, he needed to slow movement down by controlling the angle of the ramp. With this, he could measure units of distance per units of time. (Click through to *Galileo and Perspective* [Dauben](http://www.mcm.edu/academic/galileo/ars/arshtml/mathofmotion1.html).)
+One of history's most famous experiments was performed by [Galileo](http://en.wikipedia.org/wiki/History_of_experiments) where he rolled balls down inclined ramps, making note of distance traveled with respect to time. As Galileo had no ultra-accurate measuring device, he needed to slow movement down by controlling the angle of the ramp. With this, he could measure units of distance per units of time. (Click through to *Galileo and Perspective* [Dauben](https://www.youtube.com/watch?v=irB_XiJ-7M8).)
 
 
 Suppose that no matter what the incline was, Galileo observed that in units of the distance traveled in the first second that the distance traveled between subsequent seconds was $3$ times, then $5$ times, then $7$ times, ... This table summarizes.
