@@ -72,6 +72,21 @@ Rendered output lands in `_book/` (gitignored), not beside the `.qmd`.
 - `quarto render` of the chapter succeeds (code executes at build — this is the test)
 - `typos` clean
 - Math output verified against the upstream published page for the same chapter (results should match, not just run). Where the port *deliberately* diverges (classes **L**/**I** — see "Choosing What to Show"), identical output is not the standard: verify the mathematics independently and make the divergence explicit in the prose.
+- **Every external link in the chapter resolves.** These notes are years old and their
+  citations rot; two dead links were found by accident in `derivatives.qmd` alone. Check
+  before opening the PR:
+
+  ```bash
+  /usr/bin/grep -o 'http[s]*://[^)]*' quarto/<group>/<chapter>.qmd | sort -u | \
+    while read u; do printf '%s  %s\n' "$(curl -s -o /dev/null -w '%{http_code}' -L --max-time 20 "$u")" "$u"; done
+  ```
+
+  Anything not `200` needs a judgement call — find the moved page, substitute an equivalent
+  source, or drop the link. Note `maa.org` answers **403**, not 404, so a check that only
+  looks for 404 misses that whole family. Fix links only in the chapter being ported: the
+  same dead URL often appears in unported chapters too (and may be a *different* citation
+  that happened to share the URL), and editing those early only adds noise to their eventual
+  diff against upstream.
 
 ## Publishing a ported chapter
 
