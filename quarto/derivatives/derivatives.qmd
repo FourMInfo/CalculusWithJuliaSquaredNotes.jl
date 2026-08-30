@@ -382,7 +382,7 @@ The tangent line is not just a line that intersects the graph in one point, nor 
 
 :::{.callout-note}
 ## Note
-This last point was certainly not obvious at first. [Barrow](http://www.maa.org/sites/default/files/0746834234133.di020795.02p0640b.pdf), who had Newton as a pupil, and was the first to sketch a proof of part of the Fundamental Theorem of Calculus, understood a tangent line to be a line that intersects a curve at only one point.
+This last point was certainly not obvious at first. [Barrow](https://mathshistory.st-andrews.ac.uk/Strick/Barrow.pdf), who had Newton as a pupil, and was the first to sketch a proof of part of the Fundamental Theorem of Calculus, understood a tangent line to be a line that intersects a curve at only one point.
 
 :::
 
