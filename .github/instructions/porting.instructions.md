@@ -125,6 +125,44 @@ go back to being ignored.
 - Per-cell `execute: timeout:` is a possible backstop but UNVERIFIED for the native Julia engine (QuartoNotebookRunner) — the external wall-clock timeout is the reliable mechanism.
 - **Check the output in a browser, served over HTTP** — `python3 -m http.server 8765 --bind 127.0.0.1` from `_book/`, or `quarto preview`. Grepping the HTML proves a cell *executed*; it does not prove the page *displays*. Interactive figures depend on JavaScript that only runs in a real browser.
 
+### A render can silently use the WRONG package version
+
+Three layers can each serve stale code with no error, and they stack. All three were hit in
+one sitting on 2026-08-30, re-rendering `limits.qmd` after `CalculusWithJuliaSquared`
+v0.8.0:
+
+1. **The chapter environment.** `quarto/<group>/Project.toml` declares CWJS through
+   `[sources]` with **no `[compat]` entry**, and Manifests are gitignored. So nothing forces
+   the version forward: the local Manifest keeps whatever it resolved when the group was
+   first set up. `limits/` was still on **v0.6.1** while `main` was on v0.8.0, and
+   `Pkg.add` of an unrelated package did not move it — only `Pkg.update` does.
+2. **The QuartoNotebookRunner worker.** The bullet above sells the warm worker as free
+   speed, and it is — but "packages stay loaded" means a *running process holds the old
+   module*. After fixing the environment the render still produced v0.6.1 answers, because
+   it was **executing the new cells against the old code**. Nothing in the output says so.
+3. **`_freeze` plus CI.** CI assembles HTML from the committed freeze and never re-executes,
+   so a stale render stays stale *and green*. **Whatever the local machine rendered is what
+   ships.** There is no downstream check.
+
+Symptom of all three: a cell you just wrote returns the *old* behaviour. Ours rendered
+`(nothing, :unresolved)` where `symlim` returns `(0.0, :squeeze)` in a fresh REPL.
+
+**Before re-rendering a chapter after a CWJS release, do both:**
+
+```bash
+julia --project=quarto/<group> -e 'using Pkg; Pkg.update("CalculusWithJuliaSquared"); Pkg.status("CalculusWithJuliaSquared")'
+quarto call engine julia stop      # drops the warm worker; next render is a cold start
+```
+
+Then render and **check a cell whose output you know should have changed** — not merely
+that the render succeeded.
+
+**Re-rendering an already-published chapter after a package change is itself a check worth
+running.** It is how a v0.7.0 regression was found: `symlim` had started returning
+`:unresolved` for `x^2 + 1 + log(abs(11x-15))/99` at `15//11`, where the live page renders
+`-Inf`. CI could not have caught it, and neither could the package's own test suite — the
+case only existed in the chapter.
+
 ### Blank figure gaps: a JS-load problem, not a port problem
 
 Symptom: some figures render and others are blank gaps, splitting cleanly by backend — GR/static figures fine, `plotly()` figures missing. Cause is script load order, **not** anything in the chapter.

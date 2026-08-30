@@ -11,6 +11,7 @@ This section uses the following add-on packages:
 using CalculusWithJuliaSquared
 using Richardson                 # for extrapolation
 import SymbolicLimits            # symbolic limits: a companion package to Symbolics
+import IntervalArithmetic        # rigorous enclosures, for the squeeze theorem
 plotly()
 ```
 
@@ -780,7 +781,7 @@ different characters -- and one of them is a package we have to handle with care
 
 Julia's symbolic limits come from `SymbolicLimits`, which implements the *Gruntz algorithm*
 for log-exponential functions **at infinity**. It is very good at that. Away from it,
-as of v1.1.5, it does not cancel common factors, so `limit((x^2-1)/(x-1), x, 1)` returns
+as of v1.2.0, it does not cancel common factors, so `limit((x^2-1)/(x-1), x, 1)` returns
 `0` rather than `2` -- and reports its assumptions as satisfied, so nothing warns you.
 
 `symlim` therefore tries the dependable routes first and asks that engine last:
@@ -790,12 +791,18 @@ as of v1.1.5, it does not cancel common factors, so `limit((x^2-1)/(x-1), x, 1)`
 | `:substitution` | the expression was defined at $c$; evaluate it |
 | `:cancel` | a removable singularity; cancel the common factor, then evaluate |
 | `:series` | expand numerator and denominator as Taylor series, compare leading orders |
+| `:reciprocal` | at infinity, a ratio of polynomials; substitute $x \to 1/u$ and cancel |
 | `:gruntz` | hand it to `SymbolicLimits` -- for limits at infinity |
 | `:divergent_numeric` | the values grow without bound |
+| `:squeeze` | bound the function by intervals that collapse to a point |
+| `:sides_disagree` | the left and right limits both exist and differ -- so there is none |
+| `:undefined_on_side` | a one-sided limit was asked for on a side outside the domain |
 | `:unresolved` | no method applied; **no answer is invented** |
 
-The first three are exact and give rationals. `symlim` also cross-checks its answer against
-a numeric probe and warns if the two disagree.
+The first four are exact and give rationals. Every route's answer is then checked against
+what the function actually does numerically on the side being approached; an answer that
+contradicts the evidence is discarded and the next route tried. Pass `side = :left` or
+`side = :right` for a one-sided limit.
 :::
 
 
@@ -876,8 +883,11 @@ form the Gruntz engine was built for:
 symlim((exp((1 - rho) * log(x)) - 1) / (1 - rho), rho, 1)
 ```
 
-giving $\log(x)$, by the `:gruntz` route. Rewriting an expression into the form a method
-expects is a normal part of symbolic work, not a workaround.
+giving $\log(x)$ -- by the `:series` route, as it happens, since once the power is written
+as an exponential the expression has a Taylor series in $\rho$ and the series stage reaches
+it before the engine is ever asked. Rewriting an expression into a form some method can
+handle is a normal part of symbolic work, not a workaround; which method then takes it is
+worth reading off the route rather than assuming.
 
 
 ##### Example: exact values and where exactness is lost
@@ -1961,6 +1971,40 @@ between both $g$ and $h$, so must to have a limit of $0$.
          L"The function $f$ has no limit - it oscillates too much near $0$"]
 answ = 1
 radioq(choices, answ)
+```
+
+The argument in the graph can be *computed*, and this is one of the few places where a
+limit is established by bounding rather than by algebra. Interval arithmetic evaluates an
+expression over a whole interval at once and returns an enclosure: a range guaranteed to
+contain every value the function takes there. Squeeze the interval towards $0$ and watch:
+
+```{julia}
+#| hold: true
+f(x) = x * sin(1/x)
+for h in (1//10, 1//100, 1//1000)
+    box = IntervalArithmetic.interval(-float(h), float(h))
+    println(rpad("x ∈ ±$h", 14), f(box))
+end
+```
+
+Each enclosure traps every value of $f$ near $0$, and their widths collapse. That *is* the
+squeeze theorem -- $g$ and $h$ are the two ends of the box -- carried out as a computation
+rather than read off a picture. `symlim` runs the same argument, and names it:
+
+```{julia}
+symlim(x * sin(1/x), x, 0)
+```
+
+The route matters as much as the value here. `:squeeze` says the answer was reached by
+bounding, not by cancelling or by a series -- which is the honest description, since
+$x\sin(1/x)$ has no useful series at $0$.
+
+Note what the method does *not* claim. Applied to $\sin(x)$ as $x \to \infty$ the
+enclosure is $[-1, 1]$ at every scale and never collapses, so `symlim` declines rather
+than inventing a value -- correctly, as that limit does not exist:
+
+```{julia}
+symlim(sin(x), x, Inf)
 ```
 
 (The [Wikipedia](https://en.wikipedia.org/wiki/Squeeze_theorem) entry for the squeeze theorem has this unverified, but colorful detail:
