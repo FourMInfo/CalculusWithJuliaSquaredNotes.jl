@@ -561,10 +561,10 @@ across several values of $x$:
 ```{julia}
 hval = 1e-6
 cs = [0, pi/6, pi/4, pi/3, pi/2]
-tidy(v) = round.(v; digits=5) .+ 0.0     # `.+ 0.0` so a rounded -0.0 prints as 0.0
+round5(v) = round.(v; digits=5) .+ 0.0   # `.+ 0.0` so a rounded -0.0 prints as 0.0
 DataFrame(x = cs,
-          difference_quotient = tidy([(sin(c+hval) - sin(c))/hval for c in cs]),
-          cosx = tidy(cos.(cs)))
+          difference_quotient = round5([(sin(c+hval) - sin(c))/hval for c in cs]),
+          cosx = round5(cos.(cs)))
 ```
 
 The two columns match across the row: the limit of the difference quotient is the function
@@ -613,10 +613,11 @@ which approaches $1/2 = 1/c$, and then across several values of $x$:
 
 
 ```{julia}
+hval = 1e-6                              # as above; repeated so this cell stands alone
 cs = [1, 2, 3, 4, 5]
 DataFrame(x = cs,
-          difference_quotient = tidy([(log(c+hval) - log(c))/hval for c in cs]),
-          one_over_x = tidy(1 ./ cs))
+          difference_quotient = round5([(log(c+hval) - log(c))/hval for c in cs]),
+          one_over_x = round5(1 ./ cs))
 ```
 
   * The derivative of $f(x) = e^x$ can also be done from a limit. We have

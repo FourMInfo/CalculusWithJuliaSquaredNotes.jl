@@ -131,11 +131,15 @@ Three layers can each serve stale code with no error, and they stack. All three 
 one sitting on 2026-08-30, re-rendering `limits.qmd` after `CalculusWithJuliaSquared`
 v0.8.0:
 
-1. **The chapter environment.** `quarto/<group>/Project.toml` declares CWJS through
-   `[sources]` with **no `[compat]` entry**, and Manifests are gitignored. So nothing forces
-   the version forward: the local Manifest keeps whatever it resolved when the group was
-   first set up. `limits/` was still on **v0.6.1** while `main` was on v0.8.0, and
-   `Pkg.add` of an unrelated package did not move it — only `Pkg.update` does.
+1. **The chapter environment.** Manifests are gitignored, so the `[compat]` bound is the
+   only thing pinning a version. Each ported group's `Project.toml` now **pins CWJS
+   exactly** (`CalculusWithJuliaSquared = "0.8.2"`), so a stale environment fails loudly
+   instead of quietly rendering against an old version — **keep that pin current on every
+   CWJS release, patches included.** Before the pins existed, `limits/` and `derivatives/`
+   were both silently on **v0.6.1** while `main` was on v0.8.0, and `Pkg.add` of an
+   unrelated package did not move them; only `Pkg.update` does. Adding the first pin
+   immediately surfaced a real conflict (CWJS wanting IntervalArithmetic 1.x against
+   `ImplicitEquations`' 0.20.9) that would otherwise have detonated later.
 2. **The QuartoNotebookRunner worker.** The bullet above sells the warm worker as free
    speed, and it is — but "packages stay loaded" means a *running process holds the old
    module*. After fixing the environment the render still produced v0.6.1 answers, because
@@ -150,6 +154,7 @@ Symptom of all three: a cell you just wrote returns the *old* behaviour. Ours re
 **Before re-rendering a chapter after a CWJS release, do both:**
 
 ```bash
+# 1. raise the pin in quarto/<group>/Project.toml to the new version, then:
 julia --project=quarto/<group> -e 'using Pkg; Pkg.update("CalculusWithJuliaSquared"); Pkg.status("CalculusWithJuliaSquared")'
 quarto call engine julia stop      # drops the warm worker; next render is a cold start
 ```
