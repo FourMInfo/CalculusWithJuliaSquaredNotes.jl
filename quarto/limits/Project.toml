@@ -17,7 +17,7 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 
 [compat]
-CalculusWithJuliaSquared = "0.8.2"
+CalculusWithJuliaSquared = "0.8.3"
 
 [sources]
 CalculusWithJuliaSquared = {url = "https://github.com/FourMInfo/CalculusWithJuliaSquared.jl"}
