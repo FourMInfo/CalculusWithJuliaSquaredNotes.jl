@@ -594,14 +594,16 @@ can simply take the limit -- and this quotient needs no rearranging first:
 symlim((log(x + h) - log(x))/h, h, 0)
 ```
 
+confirming $[\log(x)]' = 1/x$.
+
 That may look like it contradicts the warning above, since $(\log(x+h) - \log(x))/h$ is
 another $0/0$ form at $h=0$. It does not: `symlim` puts the expression through a series
 expansion before any engine sees it, and for logarithms and exponentials that expansion is
 straightforward. It is *rational* quotients, where a common factor has to be cancelled
 first, that go wrong when handed over raw.
 
-confirming $[\log(x)]' = 1/x$. The numeric view is still worth seeing, since it shows the
-same answer arriving as a *sequence* -- first the convergence at a sample $x$:
+The numeric view is still worth seeing, since it shows the same answer arriving as a
+*sequence* -- first the convergence at a sample $x$:
 
 
 ```{julia}

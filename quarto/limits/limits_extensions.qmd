@@ -7,11 +7,15 @@ This section uses the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
+import IntervalArithmetic        # rigorous enclosures, for the squeeze theorem
 plotly()
-using SymPy
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using`
+of its own. Limits here are taken with `symlim`, introduced in the previous chapter: it
+returns the value *and the route* it took, so each answer says how it was reached.
 
 ```{julia}
 #| echo: false
@@ -124,22 +128,45 @@ Similarly, a limit on the left is defined where $U=(c-\delta, c)$.
 
 
 
-The `SymPy` function `limit` has a keyword argument `dir="+"` or `dir="-"` to request that a one-sided limit be formed. The default is `dir="+"`. Passing `dir="+-"` will compute both one side limits, and throw an error if the two are not equal, in agreement with no limit existing.
+`symlim` takes a `side` keyword — `:right` or `:left` — to request a one-sided limit. The
+default, `side = :both`, is the two-sided limit of the definition above.
 
 
 ```{julia}
-@syms x
+@variables x
 ```
 
 ```{julia}
 #| hold: true
 f(x) = abs(x)/x
-limit(f(x), x=>0, dir="+"), limit(f(x), x=>0, dir="-")
+symlim(f(x), x, 0; side = :right), symlim(f(x), x, 0; side = :left)
 ```
 
-:::{.callout-warning}
-## Warning
-That means the mathematical limit need not exist when `SymPy`'s `limit` returns an answer, as `SymPy` is only carrying out a one sided limit. Explicitly passing `dir="+-"` or checking that both `limit(ex, x=>c)` and `limit(ex, x=>c, dir="-")` are equal would be needed to confirm a limit exists mathematically.
+The two one-sided limits are $1$ and $-1$, exactly as the graph suggests. Both come back by
+the `:series` route: approached from one side at a time, $|x|$ is just $x$ or $-x$, and
+$x/x$ and $-x/x$ are constants.
+
+
+Ask instead for the two-sided limit and the answer is a refusal:
+
+
+```{julia}
+#| hold: true
+f(x) = abs(x)/x
+symlim(f(x), x, 0)
+```
+
+:::{.callout-note icon=false}
+## Refusing is the answer
+
+`:sides_disagree` is not a failure to compute. It is the computation: `symlim` established
+both one-sided limits, found them different, and concluded that no limit exists — which is
+precisely the definition at work. A tool that returned $1$ here would be *wrong*, and
+quietly so, since $1$ is a perfectly plausible-looking number.
+
+This is worth contrasting with `SymPy`, whose `limit` takes a one-sided limit **by
+default** (`dir="+"`), so it answers `1` for this expression unless asked otherwise. The
+mathematical limit need not exist when a number comes back.
 
 :::
 
@@ -160,11 +187,11 @@ Again, the (nearly) vertical lines are an artifact of the graphing algorithm and
 Consider the limit at $c=0$. If $0 < x < 1/2$, say, then $f(x) = 0$ as we round down, so the right limit will be $0$. However, if $-1/2 < x < 0$, then the $f(x) = -1$, again as we round down, so the left limit will be $-1$. Again, with this example both the left and right limits exists, but at the integer values they are not equal, as they differ by 1.
 
 
-Some functions only have one-sided limits as they are not defined in an interval around $c$. There are many examples, but we will take $f(x) = x^x$ and consider $c=0$. This function is not well defined for all $x < 0$, so it is typical to just take the domain to be $x > 0$. Still it has a right limit $\lim_{x \rightarrow 0+} x^x = 1$. `SymPy` can verify:
+Some functions only have one-sided limits as they are not defined in an interval around $c$. There are many examples, but we will take $f(x) = x^x$ and consider $c=0$. This function is not well defined for all $x < 0$, so it is typical to just take the domain to be $x > 0$. Still it has a right limit $\lim_{x \rightarrow 0+} x^x = 1$, which we can verify:
 
 
 ```{julia}
-limit(x^x, x=>0, dir="+")
+symlim(x^x, x, 0; side = :right)
 ```
 
 This agrees with the IEEE convention of assigning `0^0` to be `1`.
@@ -231,14 +258,32 @@ Let's consider some cases.
 The function $f(x) = \sin(x)$ will not have a limit at $+\infty$ for exactly the same reason that $f(x) = \sin(1/x)$ does not have a limit at $c=0$ - it just oscillates between $-1$ and $1$ so never eventually gets close to a single value.
 
 
-`SymPy` gives an odd answer here indicating the range of values:
+`symlim` declines, which is the correct answer — there is no limit to report:
 
 
 ```{julia}
-limit(sin(x), x => oo)
+symlim(sin(x), x, Inf)
 ```
 
-(We used `SymPy`'s `oo` for $\infty$ and not `Inf`.)
+(We use Julia's `Inf` for $\infty$. `symlim` takes it directly as the limit point.)
+
+
+The refusal is *earned* rather than assumed, and the previous chapter showed how: interval
+arithmetic encloses $\sin$ over a whole neighbourhood at once, and here the enclosure is
+$[-1, 1]$ no matter how far out we start. An enclosure that never collapses is a function
+with no limit:
+
+
+```{julia}
+#| hold: true
+for M in (10, 100, 1000)
+    box = IntervalArithmetic.interval(float(M), float(10M))
+    println(rpad("x ∈ [$M, $(10M)]", 20), sin(box))
+end
+```
+
+Where `SymPy` reports this as an `AccumBounds(-1, 1)` object, the interval $[-1,1]$ above is
+the same statement, arrived at by computation rather than by a special return type.
 
 
 ---
@@ -248,8 +293,11 @@ However, a damped oscillation, such as $f(x) = e^{-x} \sin(x)$ will have a limit
 
 
 ```{julia}
-limit(exp(-x)*sin(x), x => oo)
+symlim(exp(-x)*sin(x), x, Inf)
 ```
+
+The `:squeeze` route names the reason: $-e^{-x} \leq e^{-x}\sin(x) \leq e^{-x}$, and both
+bounds go to $0$. The oscillation never stops, but the room it has to oscillate in does.
 
 ---
 
@@ -258,20 +306,59 @@ We have rational functions will have the expected limit. In this example $m = n$
 
 
 ```{julia}
-limit((x^2 - 2x +2)/(4x^2 + 3x - 2), x=>oo)
+symlim((x^2 - 2x + 2)/(4x^2 + 3x - 2), x, Inf)
 ```
+
+The answer is the *exact* $1/4$, not $0.25$. That is the `:reciprocal` route at work: for a
+ratio of polynomials at infinity, substituting $x \to 1/u$ turns the limit into one at $0$,
+where the leading coefficients divide exactly.
+
 
 ---
 
 
-Though rational functions can have only one (at most) horizontal asymptote, this isn't true for all functions. Consider the following $f(x) = x / \sqrt{x^2 + 4}$. It has different limits depending if $x$ goes to $\infty$ or negative $\infty$:
+Though rational functions can have only one (at most) horizontal asymptote, this isn't true for all functions. Consider the following $f(x) = x / \sqrt{x^2 + 4}$. It has different limits depending if $x$ goes to $\infty$ or negative $\infty$.
+
+
+Handed over as written, this one is refused:
+
+
+```{julia}
+symlim(x / sqrt(x^2 + 4), x, Inf)
+```
+
+The square root puts it outside every exact route: it is not a ratio of polynomials, so
+`:reciprocal` does not apply, and the Gruntz engine is built for log-exponential forms. The
+fix is the reduction this section just described — trade the limit at $\infty$ for a limit
+at $0$ by setting $u = 1/x$. Dividing through by $x$ (which is $+\sqrt{x^2}$ for $x>0$),
+
+
+$$
+\frac{x}{\sqrt{x^2+4}} = \frac{1}{\sqrt{1 + 4/x^2}} = \frac{1}{\sqrt{1 + 4u^2}},
+$$
+
+and as $x \rightarrow \infty$ we have $u \rightarrow 0$:
 
 
 ```{julia}
 #| hold: true
-f(x) = x / sqrt(x^2 + 4)
-limit(f(x), x=>oo), limit(f(x), x=>-oo)
+@variables u
+symlim(1/sqrt(1 + 4u^2), u, 0)
 ```
+
+For $x \rightarrow -\infty$ the only change is that $\sqrt{x^2} = -x$, which flips the sign:
+
+
+```{julia}
+#| hold: true
+@variables u
+symlim(-1/sqrt(1 + 4u^2), u, 0)
+```
+
+Both are exact, and the work of getting there is the mathematics — recognising that
+$\sqrt{x^2}$ is $|x|$, and that $|x|$ has a sign that depends on which infinity you are
+heading toward. That sign *is* the reason the two limits differ.
+
 
 (A simpler example showing this behavior is just the function $x/|x|$ considered earlier.)
 
@@ -348,13 +435,13 @@ plot(f, 1/50, 1,    color=:blue, legend=false)
 plot!(f, -1, -1/50, color=:blue)
 ```
 
-`SymPy` agrees:
+And `symlim` agrees:
 
 
 ```{julia}
 #| hold: true
 f(x) = 1/x
-limit(f(x), x=>0, dir="-"), limit(f(x), x=>0, dir="+")
+symlim(f(x), x, 0; side = :left), symlim(f(x), x, 0; side = :right)
 ```
 
 ---
@@ -371,12 +458,16 @@ g(x) = x^x * (1 + log(x))
 plot(g, 1/100, 1)
 ```
 
-We can check with `SymPy`:
+We can check:
 
 
 ```{julia}
-limit(g(x), x=>0, dir="+")
+symlim(g(x), x, 0; side = :right)
 ```
+
+Here the route is `:divergent_numeric`: no series or engine settled it, so the answer rests
+on the values themselves growing without bound along the side approached. That is a weaker
+kind of evidence than an exact cancellation, and naming it says so.
 
 ## Limits of sequences
 
@@ -394,14 +485,51 @@ Common language is the sequence *converges* when the limit exists and otherwise 
 The above is essentially the same as a limit *at* infinity for a function, but in this case the function's domain is only the non-negative integers.
 
 
-`SymPy` is happy to compute limits of sequences. Defining this one involving a sum is best done with the `summation` function:
+Limits of sequences are computed the same way, once the sequence is written as an
+expression in $n$. There is a wrinkle: `Symbolics` has no symbolic summation — no way to
+write $\sum_{i=0}^{n}$ with a *symbolic* upper bound. Julia's own `sum` works, but only
+over a range that is known:
 
 
 ```{julia}
-@syms i::integer n::(integer, positive)
-s(n) = 1//2 * summation((1//4)^i, (i, 0, n))    # rationals make for an exact answer
-limit(s(n), n=>oo)
+#| hold: true
+@variables x
+sum(x^i for i in 0:3)          # a concrete range: fine
 ```
+
+Writing `0:n` for a symbolic `n` fails before `Symbolics` is even involved, since the range
+itself cannot be built. So we supply the closed form ourselves — which for this sum is the
+geometric series formula the chapter on limits already derived:
+
+
+$$
+s_n = \frac{1}{2}\sum_{i=0}^{n} \left(\frac{1}{4}\right)^i
+    = \frac{1}{2}\cdot\frac{1 - (1/4)^{n+1}}{1 - 1/4}
+    = \frac{2}{3}\left(1 - \left(\tfrac{1}{4}\right)^{n+1}\right).
+$$
+
+Now the limit is a limit of an ordinary expression in $n$. Written with the power as it
+stands, though, the exponent is symbolic, and a symbolic exponent blocks every exact route:
+
+
+```{julia}
+#| hold: true
+@variables n
+symlim((2//3) * (1 - (1//4)^(n+1)), n, Inf)
+```
+
+The value is right but it is a float. Rewriting $a^m$ as $e^{m\log a}$ — the same move used
+twice in the previous chapter — puts it in log-exponential form, which is exactly what the
+Gruntz engine is built for, and the answer comes back exact:
+
+
+```{julia}
+#| hold: true
+@variables n
+symlim((2//3) * (1 - exp((n+1) * log(1//4))), n, Inf)
+```
+
+$2/3$, the area under the parabola, as an exact rational.
 
 ##### Example
 
@@ -438,10 +566,21 @@ $$
 using the *geometric* sum formula with $x \approx 0$ (and not $1$):
 
 
+$$
+\sum_{i=0}^{n} x^i = \frac{1 - x^{n+1}}{1 - x}.
+$$
+
+As above, the symbolic upper bound puts this beyond `sum`, but a concrete range shows the
+identity holding:
+
+
 ```{julia}
 #| hold: true
-@syms x n i
-summation(x^i, (i,0,n))
+@variables x
+n = 4
+lhs = sum(x^i for i in 0:n)
+rhs = simplify((1 - x^(n+1)) / (1 - x))
+lhs, rhs, isequal(expand(lhs), expand(rhs))
 ```
 
 As this holds for all $n$, as $n$ goes to $\infty$ we have:
@@ -543,9 +682,14 @@ First consider $f(x) = x^3$ and $g(x) = x^4$. We can take $m=2$ and $n=1$ to ver
 
 
 ```{julia}
+#| hold: true
+@variables x
 fx, gx = x^3, x^4
-limit(fx^2/gx, x=>oo), limit(gx^1 / fx, x=>oo)
+symlim(fx^2/gx, x, Inf), symlim(gx^1/fx, x, Inf)
 ```
+
+Both are ratios of polynomials, so both go by `:reciprocal` — the exact route from earlier
+in the chapter.
 
 Similarly for any pairs of powers, so we could conclude $f(x) = x^n$ and $g(x) =x^m$ are comparable. (However, as is easily observed, for $m$ and $n$ both positive integers $\lim_{x \rightarrow \infty} x^{m+n}/x^m = \infty$ and $\lim_{x \rightarrow \infty} x^{m}/x^{m+n} = 0$, consistent with our discussion on rational functions that higher-order polynomials dominate lower-order polynomials.)
 
@@ -553,19 +697,56 @@ Similarly for any pairs of powers, so we could conclude $f(x) = x^n$ and $g(x) =
 Now consider $f(x) = x$ and $g(x) = \log(x)$. These are not compatible as there will be no $n$ large enough. We might say $x$ dominates $\log(x)$.
 
 
+We want this for *every* $n$, so $n$ must stay symbolic. A symbolic **exponent** blocks
+every exact route — `symlim` declines rather than guess, since the order of $x^k$ is $k$
+itself. But $\log(x)^n/x$ can be rewritten so that $n$ is no longer an exponent. Put
+$u = \log(x)$, so that $x = e^u$ and $u \rightarrow \infty$ with $x$:
+
+
+$$
+\frac{\log(x)^n}{x} = \frac{u^n}{e^u} = e^{\,n\log(u) - u}.
+$$
+
+Now $n$ is a *coefficient* inside an exponential, which is precisely the log-exponential
+form the Gruntz engine handles:
+
+
 ```{julia}
-limit(log(x)^n / x, x => oo)
+#| hold: true
+@variables u n
+symlim(exp(n*log(u) - u), u, Inf)
 ```
 
-As $x$ could be replaced by any monomial $x^k$, we can say "powers" grow faster than "logarithms".
+Zero, for every $n$ at once, with no assumption placed on $n$ at all. As $x$ could be
+replaced by any monomial $x^k$, we can say "powers" grow faster than "logarithms".
+
+
+:::{.callout-note icon=false}
+## Why the rewrite, and not an assumption
+
+`SymPy` states this by declaring `n` a positive integer and letting its assumptions engine
+use that fact. `Symbolics` has no assumptions system — `@variables n::Int` fixes a *type*,
+not a fact about the value, and nothing in the limit engine consults it.
+
+That turns out not to matter here, because the assumption was never doing mathematical
+work: $\log(x)^n/x \rightarrow 0$ for *any fixed real* $n$, positive integer or not. The
+assumption is what `SymPy` needs in order to commit to an answer, not what the statement
+needs in order to be true. Rewriting so the symbol sits where the engine can use it gets
+the same result under weaker hypotheses.
+
+:::
 
 
 Now consider $f(x)=x$ and $g(x) = e^x$. These are not compatible as there will be no $m$ large enough:
 
 
+The same rewrite applies, and here it is even more direct: $x^m/e^x = e^{m\log(x) - x}$.
+
+
 ```{julia}
-@syms m::(positive, integer)
-limit(x^m / exp(x), x => oo)
+#| hold: true
+@variables x m
+symlim(exp(m*log(x) - x), x, Inf)
 ```
 
 That is $e^x$ grows faster than any power of $x$.
@@ -584,11 +765,13 @@ which will go to $\infty$ as $x \rightarrow \infty$ as $a^m/b > 1$.
 Finally, consider $f(x) = \exp(x^2)$ and $g(x) = \exp(x)^2$. Are these comparable? No, as no $n$ is large enough:
 
 
+Once more the exponents collapse into the exponential: $(e^x)^{2n}/e^{x^2} = e^{2nx - x^2}$.
+
+
 ```{julia}
 #| hold: true
-@syms x n::(positive, integer)
-fx, gx = exp(x^2), exp(x)^2
-limit(gx^n / fx, x => oo)
+@variables x n
+symlim(exp(2n*x - x^2), x, Inf)
 ```
 
 A negative test for compatibility is the following: if
@@ -832,10 +1015,12 @@ $$
 ```{julia}
 #| hold: true
 #| echo: false
-@syms x
-ex = log(exp(x + exp(-x^2))) / log(exp(-x^2))
-val = N(limit(ex, x => oo))
-numericq(val)
+# log(exp(u)) is u, but `Symbolics` does not apply that automatically, so the
+# quotient is reduced here before the limit is taken -- which is the point of the
+# exercise anyway: ln(f) = x + exp(-x^2) and ln(g) = -x^2.
+@variables x
+val = Symbolics.value(symlim((x + exp(-x^2)) / (-x^2), x, Inf)[1])
+numericq(float(val))
 ```
 
 ###### Question
@@ -845,29 +1030,44 @@ Consider the following expression:
 
 
 ```{julia}
-ex = 1/(exp(-x + exp(-x))) - exp(x)
+#| hold: true
+@variables x
+1/(exp(-x + exp(-x))) - exp(x)
 ```
 
 We want to find the limit, $L$, as $x \rightarrow \infty$, which we assume exists below.
 
 
-We first rewrite `ex` using `w` as `exp(-x)`:
+We first rewrite the expression using $w$ for $e^{-x}$. Since
+$1/e^{-x + e^{-x}} = e^{x}e^{-e^{-x}}$ and $e^{x} = 1/w$, the whole expression becomes
+
+
+$$
+e^{x}\left(e^{-w} - 1\right) = \frac{e^{-w} - 1}{w}.
+$$
+
+As $x \rightarrow \infty$, $w \rightarrow 0+$, so the limit at $0$ of this is of interest:
 
 
 ```{julia}
-@syms w
-ex1 = ex(exp(-x) => w)
+#| hold: true
+@variables w
+symlim((exp(-w) - 1)/w, w, 0)
 ```
 
-As $x \rightarrow \infty$, $w \rightarrow 0+$, so the limit at $0+$ of `ex1` is of interest.
-
-
-Use this fact, to find $L$
+Exactly $-1$, by the series route. The awkward-looking manoeuvre in the original — subtract
+the linear polynomial you expect and check the remainder vanishes — works too, and is worth
+seeing because it generalises:
 
 
 ```{julia}
-limit(ex1 - (w/2 - 1), w=>0)
+#| hold: true
+@variables w
+symlim((exp(-w) - 1)/w - (w/2 - 1), w, 0)
 ```
+
+The remainder goes to $0$, so $(e^{-w}-1)/w$ and $w/2 - 1$ have the same limit, and the
+latter is read off by inspection at $w = 0$.
 
 $L$ is:
 
@@ -884,7 +1084,8 @@ numericq(-1)
 ###### Question
 
 
-As mentioned, for limits that depend on specific values of parameters `SymPy` may have issues. As an example, `SymPy` has an issue with the following limit, whose answer  depends on the value of "$k$"
+Some limits depend on the specific value of a parameter, and cannot be answered while it
+stays symbolic. Consider
 
 
 $$
@@ -892,15 +1093,32 @@ $$
 $$
 
 
-In particular, the following with a symbolic `k` will fail:
+With a symbolic `k`, `symlim` declines:
+
 
 ```{julia}
-#| eval: false
-@syms x::real k::integer
-limit(sin(sin(x^2))/x^k, x=>0)
+#| hold: true
+@variables x k
+symlim(sin(sin(x^2))/x^k, x, 0; side = :right)
 ```
 
-For which value(s) of $k$ in $1,2,3$ is the limit $0$? (Do the above $3$ times using a specific value of `k`, not a numeric one.
+This is a refusal on principle, not a shortcoming. The order of $x^k$ *is* $k$, so ranking
+the numerator's leading order against the denominator's is meaningless until $k$ is known —
+and the answer genuinely differs for different $k$. Unlike the growth-rate limits earlier
+in this section, no rewriting can help, because here the exponent really is the whole
+question.
+
+
+Give it a value and it answers at once. Try $k = 1, 2, 3$:
+
+
+```{julia}
+#| hold: true
+@variables x
+[symlim(sin(sin(x^2))/x^k, x, 0; side = :right) for k in 1:3]
+```
+
+For which value(s) of $k$ in $1,2,3$ is the limit $0$?
 
 
 ```{julia}
