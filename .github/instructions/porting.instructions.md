@@ -27,6 +27,19 @@ Anchor: expand `alternatives/symbolics.qmd` into the canonical symbolic-math ref
 
 This costs more work per chapter than a mechanical swap. That is accepted and intended: these notes are a study tool, and the added intermediate steps are where the understanding lives.
 
+### Cell count is not the measure — teaching is
+
+**Do not treat "upstream did this in one cell" as a budget.** Where three cells teach what
+one cell asserted, use three. Aron, 2026-09-02, on a site that grew from one cell to three:
+
+> not relevant how many cells upstream had — what counts is the teaching and learning
+
+The port's job is not fidelity to upstream's shape. A cell that shows a refusal, a cell that
+pins the parameter, and a cell that shows the opposite branch are *three different things a
+reader needs*, and collapsing them to match the original would lose two of them. The same
+goes the other way: where upstream needed a cell only because SymPy required ceremony, drop
+it.
+
 ### ⚠️ The reader must be able to do it themselves, on a DIFFERENT problem
 
 **The chapter is not a record of what upstream did. It has to teach the method.** Aron's
@@ -165,8 +178,15 @@ reused the v0.8.3 freeze. Nothing warned.
 **On every CWJS release, for each chapter in a bumped environment that you did not edit:**
 
 ```bash
-rm -rf quarto/_freeze/<group>/<chapter>    # then re-render
+rm -rf quarto/_freeze/<group>/<chapter>/execute-results    # then re-render
 ```
+
+**Drop `execute-results`, not the whole chapter directory.** The freeze also holds a tracked
+`libs/` tree (bootstrap CSS/JS, ~12 files) that the published book needs, and Quarto
+*dedupes* those across chapters in a group — the second chapter in a group gets none — so a
+re-render will not always put them back. Removing the whole directory risks committing a
+deletion of assets nothing regenerates. Near-miss 2026-09-02: `rm -rf` on the whole
+directory did happen to restore all 12, but only by luck of that chapter being first.
 
 Then diff the rendered `(value, :route)` pairs against the previous render and confirm each
 change is one the release actually predicts. A route or value that moves *unexpectedly* is
