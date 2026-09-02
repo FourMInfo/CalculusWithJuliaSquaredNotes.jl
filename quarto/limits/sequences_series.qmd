@@ -7,15 +7,19 @@ This section uses the following add-on package:
 
 
 ```{julia}
-using SymPy
+#| output: false
+using CalculusWithJuliaSquared
+plotly()
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using`
+of its own. Limits here are taken with `symlim`, which returns the value *and the route*
+it took — so every answer says how it was reached.
 
 ```{julia}
 #| echo: false
 #| results: "hidden"
-using Plots
 using LaTeXStrings
-plotly()
 nothing
 ```
 
@@ -159,16 +163,85 @@ $$
 r \frac{1 - (n+1)r^n + nr^{n+1}}{(1 - r)^2}.
 $$
 
-We verify this with `SymPy`
+Rather than take this on trust, we can *derive* it — and the derivation is short, because
+it is the geometric sum with one derivative applied.
+
+
+`Symbolics` has no symbolic summation: there is no way to write $\sum_{i=1}^{n}$ with a
+symbolic upper bound, so the sum cannot simply be handed over and evaluated. But it does
+not need to be. Start from the geometric sum of the previous section,
+
+
+$$
+\sum_{i=0}^{n} r^i = \frac{1 - r^{n+1}}{1 - r},
+$$
+
+and differentiate both sides with respect to $r$. On the left, $\frac{d}{dr} r^i = i\,r^{i-1}$
+term by term — the sum is *finite*, so this is just linearity, with none of the convergence
+care an infinite sum would demand. Multiplying by $r$ turns $i\,r^{i-1}$ into $i\,r^i$, which
+is the sum we want:
+
+
+$$
+\sum_{i=1}^{n} i\,r^{i} = r\cdot\frac{d}{dr}\left[\frac{1 - r^{n+1}}{1-r}\right].
+$$
+
+Differentiation is untroubled by the symbolic exponent — a restriction that bites when
+taking *limits*, not derivatives:
+
 
 ```{julia}
-@syms r::positive n::integer i::integer
-proposed = r * (1 - (n+1)*r^n + n*r^(n+1))/(1-r)^2
-out = summation(i*r^i, (i, 1, n)) - proposed
-simplify(out)
+#| hold: true
+@variables r n
+Symbolics.derivative(r^(n+1), r)
 ```
 
-We can't set a *value* for `r` symbolically and were `r=1` this sum is different, but we have $|r| < 1$ so the proposed is indeed the partial sum.
+So the whole claim can be checked. Take the derivative, multiply by $r$, subtract the
+proposed formula, and the difference should be zero:
+
+
+```{julia}
+#| hold: true
+@variables r n
+geo      = (1 - r^(n+1)) / (1 - r)
+proposed = r * (1 - (n+1)*r^n + n*r^(n+1)) / (1-r)^2
+Symbolics.simplify_fractions(r * Symbolics.derivative(geo, r) - proposed)
+```
+
+That does *not* look like zero — but read the numerator. It is
+
+$$
+-r^{1+n}\cdot r \;-\; n\,r^{1+n}\cdot r \;+\; r^{n}\cdot r^{2} \;+\; n\,r^{n}\cdot r^{2},
+$$
+
+and $r^{1+n}\cdot r$ and $r^{n}\cdot r^{2}$ are both $r^{n+2}$, so the first term cancels
+the third and the second cancels the fourth. The expression *is* zero. `Symbolics` will not
+see it, because combining those two requires adding exponents when one of them is symbolic,
+and it does not do that.
+
+
+This is worth knowing in its own right, because it will happen again: **when an expression
+that should collapse refuses to, look for a repeated power with a symbolic exponent.** The
+fix is to stop asking the system to reason about $r^{n}$ at all — give that whole quantity
+a name, and what is left is ordinary algebra in $r$ and $R$:
+
+
+```{julia}
+#| hold: true
+@variables r n R
+geo      = (1 - r^(n+1)) / (1 - r)
+proposed = r * (1 - (n+1)*r^n + n*r^(n+1)) / (1-r)^2
+d        = r * Symbolics.derivative(geo, r) - proposed
+simplify(substitute(d, Dict(r^n => R, r^(n+1) => R*r)))
+```
+
+Exactly `0`, and for every $n$ — not for a handful of sampled values. The substitution
+$R = r^{n}$, $r^{n+1} = R\,r$ carries no assumption; it just says the same thing in symbols
+the simplifier can finish.
+
+
+The excluded case is $r = 1$, where the formula's $(1-r)^2$ denominator vanishes and the
+sum is just $1 + 2 + \cdots + n$. Since we are assuming $|r| < 1$ that is not our case.
 
 As $n \rightarrow \infty$ for $|r| < 1$ this expression goes to $s = r / (1-r)^2$. It would diverge otherwise.
 
@@ -225,7 +298,7 @@ We see that $p_n \leq s_n$ by noting $b_{n,k} \leq 1$ as each term in it is.
 
 
 
-Next, [following](https://faculty.curgus.wwu.edu/Courses/226_202040/two_sequences_cmj.pdf) a reference, we establish the bound $s_n - 3/(2n) \leq p_n$.
+Next, [following](https://faculty.curgus.wwu.edu/Papers/Two_sequences_CMJ_20140627.pdf) a reference, we establish the bound $s_n - 3/(2n) \leq p_n$.
 
 We have by multiplying out:
 
@@ -733,24 +806,53 @@ A polynomial term is like $n^k$ for some power $k>0$. We know from discussion on
 
 
 
-What about comparing a polynomial term to an exponential term?
-Let's use `SymPy` to do an example. Suppose $r > 1$
+What about comparing a polynomial term to an exponential term? Suppose $r > 1$; we compare
+$a_n = r^n$ against $b_n = n^k$.
+
+
+Written as it stands, $r^n/n^k$ has the variable in *both* exponents, and a symbolic
+exponent is the one thing that blocks every exact route — the order of $n^k$ is $k$ itself,
+so there is nothing to rank until $k$ is known. Rewriting into log-exponential form moves
+the symbols out of the exponents and into coefficients, which is exactly the form the
+limit engine is built for:
+
+
+$$
+\frac{r^n}{n^k} = e^{\,n\log r \;-\; k\log n}.
+$$
+
+Fixing $r = 2$ as a concrete instance of $r > 1$, but leaving $k$ **symbolic**:
+
 
 ```{julia}
-@syms x::positive
-r = 1 + x
-@syms n::(integer, positive) k::(integer, positive)
-a_n = r^n
-b_n = n^k
-limit(a_n/b_n, n=>oo)
+#| hold: true
+@variables n k
+symlim(exp(n*log(2) - k*log(n)), n, Inf)
 ```
 
-That this is $\infty$ indicates that the exponential term $r^n$ grows faster than any "polynomial" term $n^k$.
+That this is $\infty$ for every $k$ at once indicates that the exponential term $r^n$ grows faster than any "polynomial" term $n^k$.
+
+
+:::{.callout-note icon=false}
+## Why $r$ is pinned but $k$ is not
+
+The asymmetry is not arbitrary. `Symbolics` has no assumptions system — there is no way to
+declare $r > 1$ — and with $r$ left free the limit genuinely has no single answer: for
+$r > 1$ it is $\infty$, for $0 < r < 1$ it is $0$. The engine cannot know which you meant,
+and neither can the expression.
+
+$k$ is different. The claim holds for *every* $k$, so nothing needs to be assumed about it
+and it can stay symbolic — which is the stronger statement. Pin only what the mathematics
+actually depends on. The next-but-one example shows what happens when you forget to.
+
+:::
 
 
 
 
-Compare the exponential term $r^n$ to a factorial term $n!$ using `SymPy`.
+Compare the exponential term $r^n$ to a factorial term $n!$. (There is no symbolic
+factorial to hand this to, so compare the *ratio of successive terms*, as the ratio test
+does: $\frac{r^{n+1}}{(n+1)!}\cdot\frac{n!}{r^n} = \frac{r}{n+1}$, which goes to $0$.)
 
 What do you conclude?
 
@@ -763,7 +865,9 @@ raw"The factorial term `factorial(n)` grows slower than the exponential term `r^
 radioq(choices, 1)
 ```
 
-Compare the growth of a term like $n^n$ to $n!$ using `SymPy`. What do you conclude.
+Compare the growth of a term like $n^n$ to $n!$ — again through successive terms, which
+gives $\left(1 + \tfrac{1}{n}\right)^{n}$, a limit met earlier in this section. What do
+you conclude?
 
 
 ```{julia}
@@ -787,14 +891,38 @@ $$
 a_n = \frac{n!}{n^n}, \quad n \geq 0.
 $$
 
-We have
+`Symbolics` has no factorial of a symbolic argument — `factorial(n)` errors outright, and
+routing through $\Gamma(n+1)$ does not help, since $\Gamma(n+2)/\Gamma(n+1)$ will not
+cancel either. But the ratio test does not need one: the factorials cancel *by hand*,
+which is how the test is done on paper anyway.
+
+
+$$
+\frac{a_{n+1}}{a_n}
+= \frac{(n+1)!}{(n+1)^{n+1}}\cdot\frac{n^n}{n!}
+= \frac{(n+1)\,n^n}{(n+1)^{n+1}}
+= \frac{n^n}{(n+1)^n}
+= \left(\frac{n}{n+1}\right)^{n}.
+$$
+
+The single cancellation $(n+1)!/n! = n+1$ does all the work. What is left is a limit
+`symlim` can take:
+
 
 ```{julia}
-@syms n::(integer, positive)
-an = factorial(n)/n^n  # aₙ
-an_1 = an(n => n+1)    # aₙ₊₁
-limit(an_1/an, n => oo)
+#| hold: true
+@variables n
+symlim((n/(n+1))^n, n, Inf)
 ```
+
+The route is `:composition`, and it names the argument. This is $f^g$ with $f \to 1$ and
+$g \to \infty$ — the indeterminate form $1^\infty$ — so it is rewritten as
+$e^{\,n\log(n/(n+1))}$, the inner limit is found to be $-1$, and the answer is $e^{-1}$
+because $e^x$ is continuous there. That last step is the *Composition* rule stated among
+the limit theorems at the top of this section: $\lim f(a_n) = f(\lim a_n)$. Seeing the
+route named is the point — it is the difference between being handed a number and being
+shown which theorem produced it.
+
 
 Based on this output, does the sequence converge?
 
@@ -886,14 +1014,27 @@ $$
 
 That is, $s = x - x^3/3! + x^5/5! - \cdots$. Find the radius of convergence.
 
-This computation might prove useful:
+As above, cancel the factorials by hand first. With $a_n = x^{2n+1}/(2n+1)!$,
+
+
+$$
+\frac{a_{n+1}}{a_n}
+= \frac{x^{2n+3}}{(2n+3)!}\cdot\frac{(2n+1)!}{x^{2n+1}}
+= \frac{x^{2}}{(2n+2)(2n+3)},
+$$
+
+since $(2n+3)! = (2n+3)(2n+2)\,(2n+1)!$. Then:
+
 
 ```{julia}
-@syms x::real n::(positive,integer)
-an =x^(2n+1)/factorial(2n+1)
-an_1 = an(n => n+1)
-limit(an_1/an, n=>oo)
+#| hold: true
+@variables x n
+symlim(x^2/((2n+2)*(2n+3)), n, Inf)
 ```
+
+The limit is $0$ whatever $x$ is — the denominator grows without bound while the numerator
+does not depend on $n$ — so the ratio test gives convergence for every $x$.
+
 
 The radius of convergence is:
 
@@ -917,14 +1058,26 @@ $$
 
 Find the radius of convergence.
 
-This computation might prove useful
+Here the powers cancel rather than the factorials, but the move is the same one — the
+symbolic exponent has to go before a limit can be taken:
+
+
+$$
+\frac{a_{n+1}}{a_n}
+= \frac{(x-1)^{n+1}}{n+1}\cdot\frac{n}{(x-1)^{n}}
+= (x-1)\cdot\frac{n}{n+1}.
+$$
 
 ```{julia}
-@syms x::real n::(positive,integer)
-an = (x-1)^n / n
-an_1 = an(n => n+1)
-limit(an_1/an, n=>oo)
+#| hold: true
+@variables x n
+symlim((x-1) * n/(n+1), n, Inf)
 ```
+
+The limit is $x-1$. The ratio test asks about $|a_{n+1}/a_n|$, so it is $|x-1|$ that must
+be less than $1$ — the series converges when $|x - 1| < 1$, giving a radius of $1$ about
+$c=1$.
+
 
 The radius of convergence is:
 
@@ -951,13 +1104,58 @@ $$
 We can show directly, without needing a formula for the partial sums as before, that this series converges whenever $|x| < 1$.
 
 
-What does this computation with `SymPy` show for positive $x$?
+We want to know how $r^n$ compares with $n$ when $r = 1 + \delta$ for some $\delta > 0$.
+Rewriting $r^n$ as $e^{\,n\log r}$ as before, and asking with $\delta$ left symbolic:
+
 
 ```{julia}
-@syms delta::positive n::integer
-r = 1 + delta
-limit(r^n - n, n=>oo)
+#| hold: true
+@variables n delta
+symlim(exp(n*log(1 + delta)) - n, n, Inf)
 ```
+
+`symlim` refuses, and the refusal is the lesson. `Symbolics` has no assumptions system:
+there is no way to say $\delta > 0$, so nothing in the expression rules out $\delta < 0$ —
+and for a negative $\delta$ we would have $r < 1$, making $r^n$ *vanish* while $-n$ runs to
+$-\infty$. The limit is $+\infty$ on one branch and $-\infty$ on the other, so there is no
+single answer to give, and `:parameter_dependent` says exactly that.
+
+
+Pinning $\delta$ to a positive value asks the question we actually meant:
+
+
+```{julia}
+#| hold: true
+@variables n
+symlim(exp(n*log(3//2)) - n, n, Inf)   # δ = 1/2, so r = 3/2 > 1
+```
+
+and to a negative one confirms the other branch is real, not hypothetical:
+
+
+```{julia}
+#| hold: true
+@variables n
+symlim(exp(n*log(1//2)) - n, n, Inf)   # r = 1/2 < 1
+```
+
+:::{.callout-warning}
+## A returned answer can be right for a question you did not ask
+
+Nothing about $\log(1+\delta)$ says which sign it has, so an engine willing to answer here
+would answer for *one* branch and say nothing about which. That is more dangerous than a
+refusal: `-Inf` looks like an ordinary result, and it is the exact opposite of the claim
+this exercise is building toward.
+
+The general habit, whenever a limit carries a free parameter: pin it to a representative
+value and compare against the free-symbol answer. If they differ, the parameter's range is
+part of the problem and has to be stated. `SymPy` states it through `positive=True`; here it
+is stated by choosing a value and saying so in the text.
+
+:::
+
+Since $\log r > 0$ whenever $r > 1$, the same computation runs for any such $r$: $n\log r$
+outgrows $\log n$, so $e^{n \log r}$ outgrows $n$.
 
 ```{julia}
 #| echo: false
