@@ -27,6 +27,40 @@ Anchor: expand `alternatives/symbolics.qmd` into the canonical symbolic-math ref
 
 This costs more work per chapter than a mechanical swap. That is accepted and intended: these notes are a study tool, and the added intermediate steps are where the understanding lives.
 
+### ⚠️ The reader must be able to do it themselves, on a DIFFERENT problem
+
+**The chapter is not a record of what upstream did. It has to teach the method.** Aron's
+standard, stated 2026-09-02:
+
+> The goal is not only to show what was done in upstream but to teach me (and anyone else who
+> reads it) how I can do the same thing myself with similar but different problems. If things
+> aren't totally explicit I won't be able to.
+
+This ranks the options, and the order is not negotiable:
+
+1. **A `symlim` route is always the best answer.** It is explicit, it is named, and the reader
+   can apply it verbatim to a problem we never wrote about. If the package can be made to own
+   the case, **make the package own it** — a CWJS release that merges first is cheaper than a
+   chapter full of bespoke manoeuvres. Every route `symlim` gains is a technique the reader
+   gets for free everywhere else in the book.
+2. **Only if no route is possible**, explain it in prose — and then the prose must **fully
+   state what is missing**. Name the absent capability, say why it is absent, say what the
+   reader should do when they meet the same shape again. A worked-around cell that happens to
+   succeed here while leaving the *general* case unexplained is the failure mode: it looks
+   like an answer and teaches nothing transferable.
+
+**The anti-pattern, concretely.** Picking a formulation that works for the specific numbers in
+front of you, and not saying that the neighbouring problem — one sign change away, one
+parameter away — will behave differently. That hides the gap instead of teaching it. If the
+reader cannot tell from the chapter *why* their variation failed, the chapter is not done.
+
+Corollary: when a limit's answer depends on a parameter's sign or range, say so **and show
+it** — display the free-parameter result alongside the pinned one. An answer that is correct
+for a branch the reader did not intend is more dangerous than a refusal.
+
+See the `sciml-coding-conventions` skill's **STOP RULE** for the mechanical trigger and the
+catalogue of rewrites to try before concluding that no route exists.
+
 ## Verified Capability Findings — RE-VERIFY BEFORE RELYING
 
 Verified live 2026-07-20 (Julia 1.12.6 · Symbolics 7.32.1 · SymbolicNumericIntegration 1.11.3 · TaylorSeries 0.17.5). This ecosystem moves fast; re-run before relying — see the `julia-coding-conventions` skill, "Verifying Capability Claims":
