@@ -1,6 +1,14 @@
 version: "0.25+cwjsn.1"   # upstream release this is derived from + fork revision
 engines: ['julia']
 
+# QuartoNotebookRunner starts Julia SINGLE-threaded, and `symlim`'s watchdog for a hung
+# `SymbolicLimits` call is CPU-bound: on one thread it starves, so a limit that hangs
+# hangs the whole render instead of coming back `:unresolved` after its timeout. Give
+# every chapter room for the watchdog to actually run. (CI is unaffected either way — it
+# renders from committed `_freeze` results and never executes Julia.)
+julia:
+  exeflags: ["-t", "4"]
+
 project:
   type: book
 
@@ -35,6 +43,7 @@ book:
       chapters:
         - limits/limits.qmd
         - limits/limits_extensions.qmd
+        - limits/sequences_series.qmd
 
     - part: derivatives.qmd
       chapters:
@@ -68,10 +77,9 @@ book:
     #    - precalc/trig_functions.qmd
     #    - precalc/julia_overview.qmd
     #
-    #- part: limits.qmd          # part page, limits/limits.qmd and
-    #  chapters:                 # limits/limits_extensions.qmd are PUBLISHED above
-    #    - limits/sequences_series.qmd
-    #    - limits/continuity.qmd
+    #- part: limits.qmd          # part page and limits/limits.qmd,
+    #  chapters:                 # limits_extensions.qmd, sequences_series.qmd
+    #    - limits/continuity.qmd  # are all PUBLISHED above
     #    - limits/intermediate_value_theorem.qmd
     #
     #  chapters:

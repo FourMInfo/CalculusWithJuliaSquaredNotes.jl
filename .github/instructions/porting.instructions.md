@@ -149,6 +149,29 @@ a silently partial book.
 (pure-Julia) environments and render from source like a normal Quarto book, and `_freeze/` can
 go back to being ignored.
 
+### ⚠️ A CWJS version bump does NOT invalidate any `_freeze`
+
+Quarto keys a freeze on the **`.qmd` content alone**. Bumping `CalculusWithJuliaSquared`
+in a chapter-group `Project.toml` changes nothing Quarto hashes, so every already-ported
+chapter in that group **silently replays results computed against the OLD package** — the
+render reports success, and the published page contradicts the version its own environment
+pins.
+
+Caught 2026-09-02: after CWJS v0.9.0, `limits_extensions.html` still showed
+`(1, :series)` / `(-1//1, :series)` for its `sqrt` pair, where v0.9.0 gives
+`(1, :substitution)` / `(-1, :substitution)`. The chapter had not been edited, so Quarto
+reused the v0.8.3 freeze. Nothing warned.
+
+**On every CWJS release, for each chapter in a bumped environment that you did not edit:**
+
+```bash
+rm -rf quarto/_freeze/<group>/<chapter>    # then re-render
+```
+
+Then diff the rendered `(value, :route)` pairs against the previous render and confirm each
+change is one the release actually predicts. A route or value that moves *unexpectedly* is
+the signal to stop, not something to commit past.
+
 ## Render discipline (Quarto can hang — guarantee liveness)
 
 - **One chapter at a time**: `quarto render <chapter>.qmd`, never the whole book to check a port. Each `.qmd` → its own `.html`; a hang in one render can't touch other chapters' already-built outputs.
