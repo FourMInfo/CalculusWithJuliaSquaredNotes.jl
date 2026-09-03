@@ -3,15 +3,20 @@
 
 {{< include ../_common_code.qmd >}}
 
-This section uses these add-on packages:
+This section uses the following add-on package:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
 plotly()
-using SymPy
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using`
+of its own, and it loads `Nemo` for us, which is what lets `symbolic_solve` handle
+polynomial equations. Limits are taken with `symlim`, which returns the value *and the
+route* it took — and in this section the route is the point: one of them is the
+definition of continuity, computed.
 
 
 ---
@@ -45,7 +50,7 @@ and
 plot([-1,-.1, .1, 1], [-1,-1, 1, 1], color=:black, legend=false, linewidth=5)
 ```
 
-Though similar at some level - they agree at nearly every value of $x$ - the first has a "jump" from $-1$ to $1$ instead of the transition in the second one. The first is not continuous at $0$ - a break is needed to draw it - where as the second is continuous.
+Though similar at some level - they agree at nearly every value of $x$ - the first has a "jump" from $-1$ to $1$ instead of the transition in the second one. The first is not continuous at $0$ - a break is needed to draw it - whereas the second is continuous.
 
 
 A formal definition of continuity was a bit harder to come about. At [first](http://en.wikipedia.org/wiki/Intermediate_value_theorem) the concept was that for any $y$ between any two values in the range for $f(x)$, the function should take on the value $y$ for some $x$. Clearly this could distinguish the two graphs above, as one takes no values in $(-1,1)$, whereas the other - the continuous one - takes on all values in that range.
@@ -216,6 +221,72 @@ $$
 The limit for any $c$ is discontinuous, as any interval about $c$ will contain *both* rational and irrational numbers so the function will not take values in a small neighborhood around any potential $L$.
 
 
+### Continuity, read off the route
+
+Every example above was settled in prose. `symlim` can settle most of them, and the way it
+reports its answer says *which kind* of discontinuity it met. The `:substitution` route
+fires only when two things hold: the expression evaluates to a finite number at $c$, and
+that number agrees with the numeric evidence gathered on the way in to $c$. Compare that
+with the definition: the value $f(c)$ exists, the limit exists, and they are equal. **A
+`:substitution` answer is continuity at $c$, computed** (within the tolerance of the
+numeric cross-check, which is why the definition is stated in words and the route is
+evidence for it, not a proof). Every other route means substitution was tried first and
+declined — the limit exists, but $f$ was not usable at $c$.
+
+The function $\sin(x)/x$ has a limit at $0$ but no value there:
+
+```{julia}
+@variables x
+symlim(sin(x)/x, x, 0)
+```
+
+`:series` rather than `:substitution`: a limit, reached without ever evaluating at $0$ —
+the signature of a removable singularity. The function $1/x$ has no limit at $0$:
+
+```{julia}
+symlim(1/x, x, 0)
+```
+
+A refusal, with the reason. `:sides_disagree` says both one-sided limits exist and differ —
+here $-\infty$ and $+\infty$. That is also what `sign` looks like, the jump from $-1$ to
+$1$:
+
+```{julia}
+symlim(sign(x), x, 0)
+```
+
+```{julia}
+symlim(sign(x), x, 0; side = :right), symlim(sign(x), x, 0; side = :left)
+```
+
+The one-sided limits are $1$ and $-1$; neither is $\text{sign}(0) = 0$, so `sign` is
+neither left nor right continuous at $0$, exactly as the bullet above says. The route for
+those two is `:squeeze`: on a box that excludes $0$ itself, `sign` is constant, and interval
+arithmetic encloses it exactly. Compare $1/x^2$, which is not a jump but a pole:
+
+```{julia}
+symlim(1/x^2, x, 0)
+```
+
+`:divergent_numeric` — the values grow without bound, on both sides in the same direction.
+The `floor` function is the interesting one, because it is continuous from one side only:
+
+```{julia}
+symlim(floor(x), x, 0; side = :right), symlim(floor(x), x, 0; side = :left)
+```
+
+From the right, `:substitution`: the limit is $\lfloor 0 \rfloor = 0$, found by evaluating —
+right continuity, which is what the plot with the filled and open markers shows. From the
+left the limit is $-1$, found by bounding, and it is not the value at $0$: not left
+continuous. The route difference *is* the one-sidedness.
+
+So the reader has a procedure for any function they meet, not just these: take `symlim`;
+`:substitution` means continuous there; `:sides_disagree` means a jump (ask each side to
+see the two values); `:divergent_numeric` means an infinite discontinuity; any other route
+that returns a value means the limit exists but the function is not defined there. Ask for
+`side = :left` or `:right` to test one-sided continuity.
+
+
 ##### Example
 
 
@@ -232,21 +303,38 @@ $$
 What value of $c$ will make $f(x)$ a continuous function?
 
 
-We note that for $x < 0$ and for $x > 0$ the function is defined by a simple polynomial, so is continuous. At $x=0$ to be continuous we need a limit to exists and be equal to $f(0)$, which is $c$. A limit exists if the left and right limits are equal. This means we need to solve for $c$ to make the left and right limits equal. We do this next with a bit of overkill in this case:
+We note that for $x < 0$ and for $x > 0$ the function is defined by a simple polynomial, so is continuous. At $x=0$ to be continuous we need a limit to exists and be equal to $f(0)$, which is $c$. A limit exists if the left and right limits are equal. This means we need to solve for $c$ to make the left and right limits equal. We do this next with a bit of overkill in this case. The right piece is the one that carries $c$:
 
 
 ```{julia}
-@syms x c
+@variables x c
 ex1 = 3x^2 + c
-ex2 = 2x-3
-del = limit(ex1, x=>0, dir="+") - limit(ex2, x=>0, dir="-")
+ex2 = 2x - 3
+symlim(ex1, x, 0; side = :right)
 ```
 
-We need to solve for $c$ to make `del` zero:
+The answer is $c$ itself, by `:substitution`: the parameter rides through the limit as a
+symbol, which is exactly what we want — we are about to solve for it. The left piece:
+
+```{julia}
+symlim(ex2, x, 0; side = :left)
+```
+
+Both routes are `:substitution`. That is the statement that each piece is continuous up to
+the junction, so its one-sided limit is just its value there — which is the remark made in
+words below. Their difference is what has to vanish:
+
+```{julia}
+del = symlim(ex1, x, 0; side = :right)[1] - symlim(ex2, x, 0; side = :left)[1]
+```
+
+We need to solve for $c$ to make `del` zero. This is a polynomial equation in $c$ — a
+linear one — and `symbolic_solve` is the tool for polynomial equations. It returns a vector
+of roots; a linear equation has exactly one, and `only` says so:
 
 
 ```{julia}
-solve(del ~ 0, c)
+only(symbolic_solve(del ~ 0, c))
 ```
 
 This gives the value of $c$.
@@ -255,8 +343,30 @@ This gives the value of $c$.
 This is a bit fussier than need be. As the left and right pieces (say, $f_l$ and $f_r$) as both are polynomials are continuous everywhere, so would have left and right limits given through evaluation. Solving for `c` as follows is enough:
 
 ```{julia}
-solve(ex1(x=>0) ~ ex2(x=>0), c)
+only(symbolic_solve(substitute(ex1, x => 0) ~ substitute(ex2, x => 0), c))
 ```
+
+::: {.callout-note icon=false}
+## A parameter in a limit
+
+`Symbolics` has no way to attach facts to a symbol — nothing says $c$ is positive, or an
+integer — so a limit that *depends* on such a fact cannot be answered for a bare $c$.
+Above, the answer did not depend on anything about $c$; it simply carried $c$ along, and
+the exact routes (`:substitution`, `:cancel`, `:series`) all do that. The routes that can
+only produce a *number* — `:squeeze`, which bounds, and `:divergent_numeric`, which
+samples — cannot carry a symbol, and rather than invent a value for it they refuse:
+
+```{julia}
+symlim(c + x * sin(1/x), x, 0)
+```
+
+The limit is $c$, but the only route able to settle $x\sin(1/x)$ is a bounding one, so the
+honest answer is *"depends on a parameter I cannot carry"*. When you meet this, pin the
+parameter — `substitute(ex, c => 1//2)` — and take the limit of that; or, if the
+expression allows it, arrange for an exact route to apply. `SymPy`, for comparison, would
+take `symbols("c", positive=true)` and answer for that branch; here the branch has to be
+chosen in the open.
+:::
 
 ##### Example
 
@@ -299,7 +409,7 @@ p2 = pixel_plot(sign, -pi, pi; title="sign")
 plot(p1, p2)
 ```
 
-The continuous `sin` function has an unbroken range, $[-1,1]$; the discountinous `sign` function has a broken range consisting of ${-1, 0, 1}$.
+The continuous `sin` function has an unbroken range, $[-1,1]$; the discontinuous `sign` function has a broken range consisting of ${-1, 0, 1}$.
 
 ## Rules for continuity
 
@@ -327,6 +437,22 @@ So, continuity is preserved for all of the basic operations except when dividing
   * Since $f(x) = e^x$ is continuous everywhere and $g(x) = -x$ is continuous everywhere, the composition $h(x) = e^{-x}$ will be continuous everywhere.
   * Since $f(x) = x$ is continuous everywhere, the function $h(x) = 1/x$ - a ratio of continuous functions - will be continuous everywhere *except* possibly at $x=0$ (where it is not continuous).
   * The function $h(x) = e^{x\ln(x)}$ will be continuous on $(0,\infty)$, the same domain that $g(x) = x\ln(x)$ is continuous. This function (which simplifies to $x^x$ when $x>0$) has a right limit at $0$ (of $1$), but is not right continuous, as $h(0)$ is not defined. (The function `h(x) = exp(x*log(x))` is not defined at `0` **but** the function `h(x) = x^x` is defined at `0.0` to be `1.0`.)
+
+That last remark is one the routes make visible. The two expressions are the same function
+on $(0, \infty)$ and have the same right limit at $0$, but only one of them has a value there:
+
+```{julia}
+symlim(exp(x * log(x)), x, 0; side = :right)
+```
+
+```{julia}
+symlim(x^x, x, 0; side = :right)
+```
+
+`:gruntz` for the first: the limit had to be *derived*, because `exp(0 * log(0))` is not a
+number. `:substitution` for the second: `0.0^0.0` is `1.0` in `Julia`, the limit agrees with
+it, and so — as `Julia` defines it — $x^x$ is right continuous at $0$ where $e^{x\ln x}$ is
+not. Same limit, different continuity, and the route is where the difference shows.
 
 
 ## Questions

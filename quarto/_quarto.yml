@@ -44,6 +44,7 @@ book:
         - limits/limits.qmd
         - limits/limits_extensions.qmd
         - limits/sequences_series.qmd
+        - limits/continuity.qmd
 
     - part: derivatives.qmd
       chapters:
@@ -77,10 +78,9 @@ book:
     #    - precalc/trig_functions.qmd
     #    - precalc/julia_overview.qmd
     #
-    #- part: limits.qmd          # part page and limits/limits.qmd,
-    #  chapters:                 # limits_extensions.qmd, sequences_series.qmd
-    #    - limits/continuity.qmd  # are all PUBLISHED above
-    #    - limits/intermediate_value_theorem.qmd
+    #- part: limits.qmd          # part page and limits/limits.qmd, limits_extensions.qmd,
+    #  chapters:                 # sequences_series.qmd, continuity.qmd
+    #    - limits/intermediate_value_theorem.qmd   # (the others are all PUBLISHED above)
     #
     #  chapters:
     #    - derivatives/mean_value_theorem.qmd

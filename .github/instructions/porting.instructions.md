@@ -10,7 +10,7 @@ applyTo: 'quarto/**'
 Triage each chapter's SymPy usage into four classes:
 
 1. **Mechanical (M)**: differentiation (`diff` → `Symbolics.derivative`/`Differential`), Taylor series (`series` → `Symbolics.taylor` or `TaylorSeries.jl`), simple algebra, trig equation solving → near line-for-line.
-2. **Needs `Nemo` (N)**: any polynomial equation solving (even a plain quadratic) — add `using Nemo` to the chapter's setup.
+2. **Polynomial equation solving** (`solve` → `symbolic_solve`): mechanical since CWJS 0.10.0, which `import`s `Nemo` itself — Symbolics' solver needs it even for a linear equation, and it returns exact answers where the Nemo-free `symbolic_linear_solve` returns floats. **No chapter writes `using Nemo`**; the old "needs Nemo (N)" class is gone.
 3. **Symbolic-limit (L)**: compose **`SymbolicLimits.jl`** (see findings — cancel/rearrange the `0/0` first, unwrap both args, take `[1]`). The numeric path (CWJS `lim` / `Richardson.extrapolate` / a numeric table) is now the *fallback*, needed only for the not-implemented forms — trig (notably the two fundamental limits `sin(h)/h`, `(1-cos(h))/h`), `sqrt`, non-integer powers. *(Scoped down 2026-08-16 from "all limits are numeric rewrites" — that earlier claim was wrong, asserted untested.)*
 4. **Integration rewrite (I)**: antiderivatives `SymbolicNumericIntegration.integrate` can't find — pick a different example, add a numeric `quadgk` fallback, or note the limitation inline as a teaching moment.
 
@@ -74,12 +74,34 @@ for a branch the reader did not intend is more dangerous than a refusal.
 See the `sciml-coding-conventions` skill's **STOP RULE** for the mechanical trigger and the
 catalogue of rewrites to try before concluding that no route exists.
 
+### Where prose asserts what a route can show, show it
+
+**Not a per-chapter option — the standing rule.** Aron, 2026-09-03, on whether to port only
+the SymPy sites of `continuity.qmd` or every claim the tooling can now demonstrate:
+
+> go whole hog and improve upstream with the power of `symlim` and the underlying Symbolics.
+
+Wherever upstream *asserts* a limit or continuity fact in words — "has a limit at 0 but is
+not defined there", "right continuous at the integers", "$e^{x\ln x}$ has a right limit but
+is not right continuous" — and `symlim` can compute it, compute it, and let the **route** be
+the evidence the prose then reads. The definitions, the history, the taxonomy stay as prose:
+that text *teaches*. The *claims* get cells. The one SymPy site is never the measure of a
+chapter's port; the prose assertions the tooling can now demonstrate are.
+
+Two things this rule is not: it is not a licence to add cells that demonstrate nothing a
+reader can transfer (see "Cell count is not the measure"), and it is not a way to hide
+scaffolding — where a cell works because of a *rewrite the engine needs* rather than
+because of mathematics (`a^m` as `e^{m\log a}`, a `u = 1/x` substitution), say so in the
+sentence. A `:squeeze` answer is a *bound*, a `:gruntz` or `:series` answer is a
+*derivation*; the number's type keeps them apart (a float from `:squeeze` means bounded, not
+derived) and the prose must not blur them.
+
 ## Verified Capability Findings — RE-VERIFY BEFORE RELYING
 
 Verified live 2026-07-20 (Julia 1.12.6 · Symbolics 7.32.1 · SymbolicNumericIntegration 1.11.3 · TaylorSeries 0.17.5). This ecosystem moves fast; re-run before relying — see the `julia-coding-conventions` skill, "Verifying Capability Claims":
 
 - **Differentiation** (`Symbolics.derivative`/`Differential`) and **Taylor series** (`Symbolics.taylor`, exact rationals; or `TaylorSeries.Taylor1`) work cleanly — the genuinely mechanical operations.
-- `Symbolics.symbolic_solve`: trig/exponential equations solve **natively** (`sin(x) ~ 0` → `2πn`); **polynomials require `using Nemo`** — without it even `x^2 - 2` errors.
+- `Symbolics.symbolic_solve`: trig/exponential equations solve **natively** (`sin(x) ~ 0` → `2πn`); polynomials need Symbolics' Nemo extension, which **CWJS ≥ 0.10.0 activates by importing `Nemo`** — nothing leaks into the namespace, and no chapter needs `using Nemo`. (Before 0.10.0, `x^2 - 2` errored without it.)
 - **Judge capabilities by ecosystem, not core.** Symbolics deliberately composes with companion packages (`SymbolicLimits` for limits, `Nemo` for polynomial solving, SymbolicUtils `@rule` for missing rewrites). Test the composing package before declaring a gap — the original "no working drop-in for `limit`" claim below was wrong precisely because it was asserted without running `SymbolicLimits`.
 - **Distinguish a tooling gap from a mathematical impossibility.** The ecosystem rule above says to hunt for a companion package before declaring a gap — but first ask whether the result *exists*. `symbolic_solve(cos(x) - x, x)` returns `nothing` not because Julia is weak but because `cos(x) = x` has no closed form in elementary functions (SymPy cannot do it either — which is exactly why upstream uses it to motivate Newton's method). Such a site needs **no port work and no apology**: state it as mathematics, and let the numeric method be the point. Reserve "Symbolics can't do X" phrasing for cases where SymPy genuinely could and we now cannot; otherwise write "there is no closed-form solution". A quick test of whether a claim is about tooling: would a different CAS produce an answer? If no, it is mathematics.
 - **Symbolic limits via `SymbolicLimits.jl` — works, with sharp edges** (verified 2026-08-16, SymbolicLimits v1.1.5; supersedes the earlier "Gruntz/at-infinity only, rewrite everything numerically" claim, which was false — it computes finite two-sided/one-sided limits):
@@ -96,8 +118,7 @@ Verified live 2026-07-20 (Julia 1.12.6 · Symbolics 7.32.1 · SymbolicNumericInt
 ## Ported-Chapter Setup Pattern
 
 ```julia
-using CalculusWithJuliaSquared   # brings Plots, Symbolics, Roots, calculus utilities (incl. `lim`)
-using Nemo                       # only if the chapter solves polynomial equations
+using CalculusWithJuliaSquared   # brings Plots, Symbolics, Roots, Nemo (imported), calculus utilities (incl. `lim`, `symlim`)
 using Richardson                 # only if a limit chapter uses numeric extrapolation
 using SymbolicLimits             # only if the chapter takes symbolic limits (add SymbolicUtils too if it writes @rule rewriters)
 ```
@@ -108,7 +129,7 @@ Never alongside `using CalculusWithJulia` or `using SymPy` in the same chapter. 
 
 QuartoNotebookRunner runs each chapter in the **nearest `Project.toml` walking up from the `.qmd`** — i.e. the chapter-group dir (`derivatives/Project.toml`, `limits/Project.toml`, …), **not** the root `quarto/Project.toml`. The 10 group envs are independent (not a workspace) and ship un-instantiated, so renders fail until each group's env is set up. Before porting a group's first chapter:
 
-1. Add `CalculusWithJuliaSquared` + a `[sources]` entry (fork URL) to that group's `Project.toml`; add `Nemo` too if any chapter in the group solves polynomials. Keep `CalculusWithJulia`/`SymPy` during transition; drop them when the whole group is ported (→ Python-free).
+1. Add `CalculusWithJuliaSquared` + a `[sources]` entry (fork URL) to that group's `Project.toml` (it brings `Nemo` with it). Keep `CalculusWithJulia`/`SymPy` during transition; drop them when the whole group is ported (→ Python-free).
 2. Instantiate: `julia --project=<group> -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'`.
 
 Rendered output lands in `_book/` (gitignored), not beside the `.qmd`.
@@ -200,7 +221,7 @@ the signal to stop, not something to commit past.
 - **Only the *first* render in a session is slow — iterating is cheap.** The cold render loads the group's whole env (CWJS + Plots + ~25 deps) *and* executes every cell — that's the ~15 min the timeout is sized for. Re-rendering after editing a few cells is **< 1 min**: `_freeze` supplies the untouched cells and QuartoNotebookRunner keeps a warm worker (packages stay loaded), so only the changed cells re-run. (Observed 2026-08-16: a cold render logged `Running [1/93]…[93/93]`; the next, after a 5-cell edit, logged *zero* `Running` lines yet still emitted the updated outputs.) So don't contort the workflow to dodge "a second render" — only the first one is expensive.
 - **Correctness ≠ display**: the port check is (a) all cells execute error-free and (b) output matches upstream — both in the *execution* stage. The stage that hangs is usually HTML/plotly *embedding*, a display concern; a hung embed is not proof the port is wrong. Isolate heavy figures (usually plotly) separately.
 - Per-cell `execute: timeout:` is a possible backstop but UNVERIFIED for the native Julia engine (QuartoNotebookRunner) — the external wall-clock timeout is the reliable mechanism.
-- **Check the output in a browser, served over HTTP** — `python3 -m http.server 8765 --bind 127.0.0.1` from `_book/`, or `quarto preview`. Grepping the HTML proves a cell *executed*; it does not prove the page *displays*. Interactive figures depend on JavaScript that only runs in a real browser.
+- **Check the output in a browser, served over HTTP** — `julia --project=@liveserver -e 'using LiveServer; serve(dir="quarto/_book", port=8001)'` from the repo root (the shared `@liveserver` environment; see the `documenter-jl-conventions` skill), or `quarto preview`. Never `python3 -m http.server`: this fork exists to remove Python, and Aron does not use it. Grepping the HTML proves a cell *executed*; it does not prove the page *displays*. Interactive figures depend on JavaScript that only runs in a real browser.
 
 ### A render can silently use the WRONG package version
 
@@ -264,7 +285,7 @@ Loading plotly *before* requirejs — the way upstream's published pages happen 
 Diagnostic if it recurs — the wrapper must be present, and in a browser console `typeof Plotly` must be `"object"`, not `"undefined"`:
 
 ```bash
-python3 -c "s=open('_book/<ch>.html').read(); print('amd-hide', s.find('__amd_define')); print('plotly', s.find('cdn.plot.ly'))"
+/usr/bin/grep -bo '__amd_define\|cdn.plot.ly' _book/<ch>.html    # byte offsets: the wrapper must precede the plotly tag
 ```
 
 Note what this is *not*: not the plotly **version** (swapping 2.6.3→3.1.0 alone changes nothing), not `file://` vs HTTP, and not GR.

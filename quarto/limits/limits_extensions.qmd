@@ -518,9 +518,14 @@ stands, though, the exponent is symbolic, and a symbolic exponent blocks every e
 symlim((2//3) * (1 - (1//4)^(n+1)), n, Inf)
 ```
 
-The value is right but it is a float. Rewriting $a^m$ as $e^{m\log a}$ — the same move used
-twice in the previous chapter — puts it in log-exponential form, which is exactly what the
-Gruntz engine is built for, and the answer comes back exact:
+The value is right, and the route says how it was reached: `:squeeze` *bounds* the
+expression with interval arithmetic and reports the midpoint of a box that has closed on
+$2/3$ — a float, because a float is all a bound knows. Nothing here was *derived*. Rewriting
+$a^m$ as $e^{m\log a}$ — the same move used twice in the previous chapter — puts the
+expression in log-exponential form, which is the domain the Gruntz engine is defined on.
+That rewrite is scaffolding for the engine, not mathematics (the two forms are the same
+function); what changes mathematically is that the exact route now applies, and the answer
+comes back derived:
 
 
 ```{julia}
