@@ -1162,7 +1162,7 @@ numericq(val, 1e-3)
 ###### Question
 
 
-(From [Strang](http://ocw.mit.edu/ans7870/resources/Strang/Edited/Calculus/Calculus.pdf), p. 37)
+(From [Strang](https://ocw.mit.edu/courses/res-18-001-calculus-fall-2023/resources/mitres_18_001_f17_ch00_pdf/), p. 48)
 
 
 Certainly $x^3$ equals $3^x$ at $x=3$. Find the largest value for which $x^3 = 3^x$.
@@ -1210,13 +1210,13 @@ radioq(choices, answ)
 ### {{{cannonball_img}}}
 figure= "figures/cannonball.jpg"
 caption = """
-Trajectories of potential cannonball fires with air-resistance included. (http://ej.iop.org/images/0143-0807/33/1/149/Full/ejp405251f1_online.jpg)
+Trajectories of potential cannonball fires with air-resistance included.
 """
 # ImageFile(:limits, figure, caption)
 nothing
 ```
 
-![Trajectories of potential cannonball fires with air-resistance included. (http://ej.iop.org/images/0143-0807/33/1/149/Full/ejp405251f1_online.jpg)
+![Trajectories of potential cannonball fires with air-resistance included.
 ](figures/cannonball.jpg){width=50%}
 
 In 1638, according to Amir D. [Aczel](http://books.google.com/books?id=kvGt2OlUnQ4C&pg=PA28&lpg=PA28&dq=mersenne+cannon+ball+tests&source=bl&ots=wEUd7e0jFk&sig=LpFuPoUvODzJdaoug4CJsIGZZHw&hl=en&sa=X&ei=KUGcU6OAKJCfyASnioCoBA&ved=0CCEQ6AEwAA#v=onepage&q=mersenne%20cannon%20ball%20tests&f=false), an experiment was performed in the French Countryside. A monk, Marin Mersenne, launched a cannonball straight up into the air in an attempt to help Descartes prove facts about the rotation of the earth. Though the experiment was not successful, Mersenne later observed that the time for the cannonball to go up was less than the time to come down. ["Vertical Projection in a Resisting Medium: Reflections on Observations of Mersenne".](http://www.maa.org/publications/periodicals/american-mathematical-monthly/american-mathematical-monthly-contents-junejuly-2014)
