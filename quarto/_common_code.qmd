@@ -47,20 +47,6 @@ nothing
 ```
 
 ```{julia}
-#| eval: false
-#| echo: false
-import SymPy
-function Base.show(io::IO, ::MIME"text/html", x::T) where {T <: SymPy.SymbolicObject}
-    println(io, "<span class=\"math-left-align\" style=\"padding-left: 4px; width:0; float:left;\"> ")
-    println(io, "\\[")
-    println(io, sympy.latex(x))
-    println(io, "\\]")
-    println(io, "</span>")
-end
-
-```
-
-```{julia}
 #| output: false
 #| echo: false
 # ImageFile
@@ -71,8 +57,7 @@ import Markdown
 using Mustache
 using Tables
 
-# q and L
-using LaTeXStrings
+# q -- L comes from CalculusWithJuliaSquared, which reexports LaTeXStrings (v0.12.0)
 macro q_str(x)
     "`$x`"
 end

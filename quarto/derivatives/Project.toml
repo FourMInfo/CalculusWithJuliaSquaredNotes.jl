@@ -6,7 +6,6 @@ DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 ImplicitEquations = "95701278-4526-5785-aba3-513cca398f19"
-LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Mustache = "ffc61752-8dc7-55ee-8c37-f3e9cdd09e70"
 PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
 PlotlyKaleido = "f2990250-8cf9-495f-b13a-cce12b45703c"
@@ -26,7 +25,7 @@ TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-CalculusWithJuliaSquared = "0.11.0"
+CalculusWithJuliaSquared = "0.12.0"
 
 [sources]
 CalculusWithJuliaSquared = { url = "https://github.com/FourMInfo/CalculusWithJuliaSquared.jl" }
