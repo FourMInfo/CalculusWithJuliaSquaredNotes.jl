@@ -9,7 +9,7 @@
 ```{julia}
 #| echo: false
 #| results: "hidden"
-using CalculusWithJulia
+using CalculusWithJuliaSquared
 
 nothing
 ```
@@ -251,7 +251,7 @@ The `varinfo` function will list the variables currently defined in the main wor
 ## Variable names
 
 
-`Julia` has a very wide set of possible [names](https://docs.julialang.org/en/stable/manual/variables/#Allowed-Variable-Names-1) for variables. Variables are case sensitive and their names can include many [Unicode](http://en.wikipedia.org/wiki/List_of_Unicode_characters) characters. Names must begin with a letter or an appropriate Unicode value (but not a number). There are some reserved words, such as `try` or `else` which can not be assigned to. However, many built-in names can be locally overwritten (shadowed).
+`Julia` has a very wide set of possible [names](https://docs.julialang.org/en/v1/manual/variables/#man-allowed-variable-names) for variables. Variables are case sensitive and their names can include many [Unicode](http://en.wikipedia.org/wiki/List_of_Unicode_characters) characters. Names must begin with a letter or an appropriate Unicode value (but not a number). There are some reserved words, such as `try` or `else` which can not be assigned to. However, many built-in names can be locally overwritten (shadowed).
 
 Conventionally, variable names are lower case. For compound names, it is not unusual to see them squished together, joined with underscores, or written in camelCase.
 
