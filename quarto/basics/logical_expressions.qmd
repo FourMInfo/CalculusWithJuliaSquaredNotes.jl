@@ -7,13 +7,12 @@ In this section we use the following package:
 
 
 ```{julia}
-using CalculusWithJulia    # loads the `SpecialFunctions` package
+using CalculusWithJuliaSquared    # reexports SpecialFunctions, Plots, LaTeXStrings, ...
 ```
 
 ```{julia}
 #| echo: false
 #| results: "hidden"
-using Plots
 plotly()
 nothing
 ```

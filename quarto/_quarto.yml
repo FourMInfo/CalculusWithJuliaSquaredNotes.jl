@@ -39,6 +39,15 @@ book:
     # To publish a newly ported chapter, move its line out of the archive below.
     - index.qmd
 
+    - part: basics.qmd
+      chapters:
+        - basics/calculator.qmd
+        - basics/variables.qmd
+        - basics/numbers_types.qmd
+        - basics/logical_expressions.qmd
+        - basics/vectors.qmd
+        - basics/ranges.qmd
+
     - part: limits.qmd
       chapters:
         - limits/limits.qmd
@@ -57,14 +66,6 @@ book:
     # ─── NOT YET PORTED (archive of the upstream chapter list) ───────────────
     # These still import SymPy; rendering them would need Python and every
     # chapter-group environment. Uncomment a line when its chapter is ported.
-    #- part: basics.qmd
-    #  chapters:
-    #    - basics/calculator.qmd
-    #    - basics/variables.qmd
-    #    - basics/numbers_types.qmd
-    #    - basics/logical_expressions.qmd
-    #    - basics/vectors.qmd
-    #    - basics/ranges.qmd
     #- part: precalc.qmd
     #  chapters:
     #    - precalc/functions.qmd

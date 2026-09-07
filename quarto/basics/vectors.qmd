@@ -6,11 +6,9 @@
 ```{julia}
 #| echo: false
 #| results: "hidden"
-using CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
 using Measures
-using LaTeXStrings
 
 nothing
 ```

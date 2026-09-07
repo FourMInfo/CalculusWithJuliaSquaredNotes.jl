@@ -205,7 +205,7 @@ Let's return to the case of the set of even numbers between $0$ and $100$. We ha
   * The set of numbers $\{2k: k=0, \dots, 50\}$.
 
 
-While `Julia` has a special type for dealing with sets, we will use a vector for such a set. (Unlike a set, vectors can have repeated values, but, as vectors are more widely used, we demonstrate them.) Vectors are described more fully in a previous section, but as a reminder, vectors are constructed using square brackets: `[]` (a special syntax for [concatenation](http://docs.julialang.org/en/latest/manual/arrays/#concatenation)). Square brackets are used in different contexts within `Julia`, in this case we use them to create a *collection*. If we separate single values in our collection by commas (or semicolons), we will create a vector:
+While `Julia` has a special type for dealing with sets, we will use a vector for such a set. (Unlike a set, vectors can have repeated values, but, as vectors are more widely used, we demonstrate them.) Vectors are described more fully in a previous section, but as a reminder, vectors are constructed using square brackets: `[]` (a special syntax for [concatenation](https://docs.julialang.org/en/v1/manual/arrays/#Concatenation)). Square brackets are used in different contexts within `Julia`, in this case we use them to create a *collection*. If we separate single values in our collection by commas (or semicolons), we will create a vector:
 
 
 ```{julia}

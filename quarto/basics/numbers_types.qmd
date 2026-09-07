@@ -6,7 +6,7 @@
 ```{julia}
 #| echo: false
 #| results: "hidden"
-using CalculusWithJulia
+using CalculusWithJuliaSquared
 
 nothing
 ```
