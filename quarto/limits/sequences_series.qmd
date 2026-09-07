@@ -16,13 +16,6 @@ plotly()
 of its own. Limits here are taken with `symlim`, which returns the value *and the route*
 it took — so every answer says how it was reached.
 
-```{julia}
-#| echo: false
-#| results: "hidden"
-using LaTeXStrings
-nothing
-```
-
 ---
 
 ![Smaller and smaller and smaller..., the [Droste effect](https://en.wikipedia.org/wiki/Droste_effect)](./figures/mona-lisa-recursive.png)
