@@ -7,11 +7,13 @@ This section uses the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
 plotly()
-using SymPy
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots`, `Symbolics` and `LaTeXStrings`, so none of
+them needs a `using` of its own.
 
 ---
 
@@ -195,11 +197,16 @@ sin(theta)^2
 ```
 
 
-These values are floating point approximations, as can be seen clearly in the computation of `cos(pi/2)`, which is mathematically $0$. Symbolic math can be used by using `PI` for `pi` if exactness matters:
+These values are floating point approximations, as can be seen clearly in the computation of `cos(pi/2)`, which is mathematically $0$. If exactness matters, the angle has to be exact first: `Symbolics.Num(pi)` is a *symbolic* $\pi$, not the floating point number `pi`, so angles built from it stay exact.
+
+That alone is not enough, though. `Symbolics` carries no table of special angles, so `cos` applied to a symbolic $\pi/6$ simply stays unevaluated. The `exact_trig_values` function supplies that table, reading off the exact value wherever the angle is a rational multiple of $\pi$:
 
 ```{julia}
-cos.([0, PI/6, PI/4, PI/3, PI/2])
+PI = Symbolics.Num(pi)
+exact_trig_values.(cos.([0, PI/6, PI/4, PI/3, PI/2]))
 ```
+
+Keeping those two steps apart is deliberate. The first makes the angle exact; the second evaluates the function at it. A floating point number that merely rounds to $\pi/6$ has already lost the exactness, and `exact_trig_values` leaves it alone rather than promoting it to $\sqrt{3}/2$.
 
 The `sincos` function computes both `sin` and `cos` simultaneously, which can be more performant when both values are needed.
 
@@ -434,7 +441,6 @@ Suppose both $\alpha$ and $\beta$ are positive with $\alpha + \beta \leq \pi/2$.
 ```{julia}
 #| echo: false
 gr()
-using Plots, LaTeXStrings
 
 # two angles
 α = pi/5

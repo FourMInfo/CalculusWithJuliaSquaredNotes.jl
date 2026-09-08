@@ -7,10 +7,13 @@ This section will use the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
 plotly()
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using`
+of its own.
 
 
 ---
@@ -1657,7 +1660,7 @@ They all contain all real numbers between the endpoints, the distinction is whet
 A domain is some set, but typically that set is an interval such as *all real numbers* ($(-\infty,\infty)$), *all non-negative numbers* ($[0,\infty)$), or, say, *all positive numbers* ($(0,\infty)$).
 
 
-The `IntervalArithmetic` package provides an easy  means to define closed intervals using the symbol `..`, but this is also used by the already loaded `CalculusWithJulia` package in different manner, so we use the fully qualified named constructor in the following to construct intervals:
+The `IntervalArithmetic` package provides an easy means to define closed intervals using the symbol `..`, but that symbol is already taken: `CalculusWithJuliaSquared` re-exports `IntervalSets`, whose `..` builds a set rather than a rigorous enclosure. So we import `IntervalArithmetic` and use its fully qualified constructor in the following:
 
 
 ```{julia}

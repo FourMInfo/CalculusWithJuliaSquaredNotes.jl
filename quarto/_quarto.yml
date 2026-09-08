@@ -48,6 +48,15 @@ book:
         - basics/vectors.qmd
         - basics/ranges.qmd
 
+    - part: precalc.qmd
+      chapters:
+        - precalc/functions.qmd
+        - precalc/plotting.qmd
+        - precalc/transformations.qmd
+        - precalc/inversefunctions.qmd
+        - precalc/exp_log_functions.qmd
+        - precalc/trig_functions.qmd
+
     - part: limits.qmd
       chapters:
         - limits/limits.qmd
@@ -66,18 +75,11 @@ book:
     # ─── NOT YET PORTED (archive of the upstream chapter list) ───────────────
     # These still import SymPy; rendering them would need Python and every
     # chapter-group environment. Uncomment a line when its chapter is ported.
-    #- part: precalc.qmd
-    #  chapters:
-    #    - precalc/functions.qmd
-    #    - precalc/plotting.qmd
-    #    - precalc/transformations.qmd
-    #    - precalc/inversefunctions.qmd
+    #  chapters:            # precalc: the five still on SymPy
     #    - precalc/polynomial.qmd
     #    - precalc/polynomial_roots.qmd
     #    - precalc/polynomials_package.qmd
     #    - precalc/rational_functions.qmd
-    #    - precalc/exp_log_functions.qmd
-    #    - precalc/trig_functions.qmd
     #    - precalc/julia_overview.qmd
     #
     #  chapters:
