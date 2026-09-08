@@ -21,6 +21,48 @@ needs a `using` of its own.
 using DataFrames
 using Latexify
 
+raw"""
+    conventional_latex(s::AbstractString) -> String
+
+Rewrite `Latexify`'s rendering of `Symbolics` values into the form a mathematics text
+uses.
+
+`Symbolics` keeps a quotient as a division term only while its rational coefficient is
+exactly `1`; any other coefficient is folded into a product, and `Latexify` then writes
+that product as a fraction *times* a symbol. So `π/6` renders conventionally while
+`2π/3` becomes `\frac{2}{3} ~ \pi`, and `-√2/2` becomes ` - \frac{1}{2} ~ \sqrt{2}`.
+The sign is incidental: `2√2/3` is positive and comes out the same way. Negation only
+matters because it turns a coefficient of `1` into `-1`, which is no longer `1`.
+
+The leading space in the negative case is not merely ugly: Pandoc will not open inline
+math on `$ `, so such a cell renders as a literal dollar sign followed by raw LaTeX
+rather than as mathematics.
+
+Four rewrites, applied to the LaTeX text:
+
+  \frac{a}{b} ~ Z   ->  \frac{a Z}{b}   (dropping a redundant coefficient of 1)
+  \frac{-a}{b}      ->  -\frac{a}{b}
+  " - \frac"        ->  "-\frac"
+  bare π             ->  \pi
+
+**If this is needed in another chapter, lift this function into
+`CalculusWithJuliaSquared` and rewrite this table to use it from there.** It is kept
+local for now because this is its only caller, and moving it would cost a release and a
+re-pin of every published group.
+"""
+function conventional_latex(s::AbstractString)
+    s = replace(s, r"\\frac\{(-?\d+)\}\{(\d+)\} ~ (\\pi|\\sqrt\{\d+\})" =>
+        m -> begin
+            c = match(r"\\frac\{(-?\d+)\}\{(\d+)\} ~ (.+)"s, m)
+            a, b, z = c.captures
+            a == "1"  ? "\\frac{$z}{$b}"  :
+            a == "-1" ? "-\\frac{$z}{$b}" : "\\frac{$a $z}{$b}"
+        end)
+    s = replace(s, r"\\frac\{-(\d+)\}\{(\d+)\}" => s"-\\frac{\1}{\2}")
+    s = replace(s, " - \\frac" => "-\\frac")
+    replace(s, "π" => "\\pi")
+end
+
 nothing
 ```
 
@@ -703,11 +745,7 @@ tbl = latexify(DataFrame(θ = θs,
                          x = exact_trig_values.(cos.(θs)),
                          y = exact_trig_values.(sin.(θs))))
 
-# `Symbolics` canonicalises -√2/2 to the product (-1//2)*√2, which Latexify writes as
-# `$ - \frac{1}{2} ~ \sqrt{2}$` -- with a space after the opening `$`. Pandoc does not
-# open inline math on `$ `, so that cell would render as a literal dollar sign instead
-# of mathematics. Close the gap; every other cell is already fine.
-Markdown.parse(replace(sprint(print, tbl), "\$ -" => "\$-"))
+Markdown.parse(conventional_latex(sprint(print, tbl)))
 ```
 
 ```{julia}
