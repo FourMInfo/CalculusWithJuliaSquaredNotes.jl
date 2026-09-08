@@ -7,10 +7,13 @@ In this section we will use these add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
 plotly()
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using`
+of its own.
 
 ```{julia}
 #| echo: false
@@ -280,7 +283,7 @@ plot!(h, label="h")
 A model for the length of a day in New York City must take into account periodic seasonal effects. A simple model might be a sine curve. However, there would need to be many modifications: Obvious ones would be that the period would need to be about $365$ days, the oscillation around $12$ and the amplitude of the oscillations no more than $12$.
 
 
-We can be more precise. According to [dateandtime.info](http://dateandtime.info/citysunrisesunset.php?id=5128581) in $2015$ the longest day will be June $21$st when there will be $15$h $8$m $55$s of sunlight, the shortest day will be December $21$st when there will be $9$h $18$m $23$s of sunlight. On March $21$st, there will be $12$h $13$m $42$s of sunlight.
+We can be more precise. In $2015$ the longest day in New York City was June $21$st, with $15$h $8$m $55$s of sunlight; the shortest was December $21$st, with $9$h $18$m $23$s. On March $21$st there were $12$h $13$m $42$s of sunlight.
 
 
 A model for a transformed sine curve is
@@ -314,12 +317,12 @@ newyork(t) = up(stretch(over(scale(sin, d), c), b), a)(t)
 plot(newyork, -20, 385)
 ```
 
-To test, if we match up with the model powering [dateandtime.info](http://dateandtime.info/citysunrisesunset.php?id=5128581) we note that it predicts "$12$h $10$m $38$s" on September $23$th, $2015$. This is day $266$ (`Date(2015, 9, 23) - Date(2015, 1, 1) + Day(1)`). Our model prediction has a difference of
+To test the model, take a day it was not built from: September $23$rd, $2015$ had $12$h $10$m $38$s of sunlight. This is day $266$ (`Date(2015, 9, 23) - Date(2015, 1, 1) + Day(1)`). Our model prediction has a difference of
 
 
 ```{julia}
-datetime = 12 + 10/60 + 38/60/60
-delta = (newyork(266) - datetime) * 60
+observed = 12 + 10/60 + 38/60/60
+delta = (newyork(266) - observed) * 60
 ```
 
 This is off by a fair amount---almost $8$ minutes. Clearly a trigonometric model, based on the assumption of circular motion of the earth around the sun, is not accurate enough for precise work, but it does help one understand how summer days are longer than winter days and how the length of a day changes fastest at the spring and fall equinoxes.

@@ -7,10 +7,13 @@ This section uses the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+#| output: false
+using CalculusWithJuliaSquared
 plotly()
 ```
+
+`CalculusWithJuliaSquared` re-exports `Plots` and `Symbolics`, so neither needs a `using`
+of its own.
 
 
 ---
@@ -168,7 +171,7 @@ Later we will see an easy way to certify this statement.
 ##### The mathematical constant $e$
 
 
-Euler's number, $e$, may be defined several ways. One way is to define $e^x$ by the limit as $n$ grows infinitely large of $(1+x/n)^n$. Then $e=e^1$. The value is an irrational number. This number turns up to be the natural base to use for many problems arising in calculus.  In `Julia` there are a few mathematical constants that get special treatment, so that when needed, extra precision is available. The value `e` is not immediately assigned to this value, rather `ℯ` is. This is typed `\euler[tab]`. The label `e` is thought too important for other uses to reserve the name for representing a single number. However, users can issue the command `using Base.MathConstants` and `e` will be available to represent this number. When the `CalculusWithJulia` package is loaded, the value `e` is defined to be the floating point number returned by `exp(1)`. This loses the feature of arbitrary precision, but has other advantages.
+Euler's number, $e$, may be defined several ways. One way is to define $e^x$ by the limit as $n$ grows infinitely large of $(1+x/n)^n$. Then $e=e^1$. The value is an irrational number. This number turns up to be the natural base to use for many problems arising in calculus.  In `Julia` there are a few mathematical constants that get special treatment, so that when needed, extra precision is available. The value `e` is not immediately assigned to this value, rather `ℯ` is. This is typed `\euler[tab]`. The label `e` is thought too important for other uses to reserve the name for representing a single number. However, users can issue the command `using Base.MathConstants` and `e` will be available to represent this number. When the `CalculusWithJuliaSquared` package is loaded, the value `e` is defined to be the floating point number returned by `exp(1)`. This loses the feature of arbitrary precision, but has other advantages.
 
 
 A [cute](https://www.mathsisfun.com/numbers/e-eulers-number.html) appearance of $e$ is in this problem: Let $a>0$. Cut $a$ into $n$ equal pieces and then multiply them. What $n$ will produce the largest value? Note that the formula is $(a/n)^n$ for a given $a$ and $n$.
