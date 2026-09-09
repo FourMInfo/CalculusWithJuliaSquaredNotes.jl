@@ -56,6 +56,8 @@ book:
         - precalc/inversefunctions.qmd
         - precalc/exp_log_functions.qmd
         - precalc/trig_functions.qmd
+        - precalc/polynomials_package.qmd
+        - precalc/julia_overview.qmd
 
     - part: limits.qmd
       chapters:
@@ -78,9 +80,7 @@ book:
     #  chapters:            # precalc: the five still on SymPy
     #    - precalc/polynomial.qmd
     #    - precalc/polynomial_roots.qmd
-    #    - precalc/polynomials_package.qmd
     #    - precalc/rational_functions.qmd
-    #    - precalc/julia_overview.qmd
     #
     #  chapters:
     #    - derivatives/mean_value_theorem.qmd
