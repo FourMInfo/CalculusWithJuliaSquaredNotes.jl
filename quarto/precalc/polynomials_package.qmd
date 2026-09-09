@@ -332,7 +332,7 @@ plot(vs, us, legend=false)
 scatter!(𝒙s, 𝒚s)
 plot!(zero)
 x0 = substitute(abc[3], Dict((X .=> 𝒙s)..., (Y .=> 𝒚s)...))
-scatter!([Float64(Symbolics.symbolic_to_float(x0))], [0], markershape=:star)
+scatter!([Symbolics.value(x0)], [0], markershape=:star)
 ```
 
 ## Questions

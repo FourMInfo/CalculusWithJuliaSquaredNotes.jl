@@ -686,7 +686,9 @@ plot(64 - (1/2)*32 * x^2, 0, 2)
 The symbolic functions used in these notes are:
 
   * for manipulating expressions: `simplify`, `expand`, `simplify_fractions` (which both cancels common factors and puts a sum of fractions over a common denominator), `factored_poly`, and `partial_fractions`
-  * for basic math: `symbolic_solve` for exact solutions, `factored_poly` and `poly_factors` for factoring over the rationals, and `numeric_roots` for the roots of a polynomial as ordinary numbers
-  * for calculus: `symlim` for limits, and `derivative` (or the prime notation, `f'`) for derivatives
+  * for basic math: `symbolic_solve` for exact solutions, and `factored_poly` and `poly_factors` for factoring over the rationals
+  * for calculus: `symlim` for limits; `f'` or `D(f)` for the derivative of a *function*, and `Symbolics.derivative(ex, var)` for the derivative of a symbolic *expression*
 
 There is no symbolic *integration* in this set; the integral chapters use numeric integration instead.
+
+A few of these need to be reached for by name, as `Symbolics.derivative` is above. `Symbolics` marks such functions *public*---documented and stable---without *exporting* them, because names like `derivative`, `value` and `jacobian` are common enough that placing them in your namespace would collide with other packages. `Polynomials`, used in a later section, exports its own `derivative`, which is exactly the clash this avoids.
