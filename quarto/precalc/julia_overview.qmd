@@ -6,7 +6,7 @@
 ```{julia}
 #| echo: false
 #| results: "hidden"
-using CalculusWithJulia
+using CalculusWithJuliaSquared
 
 nothing
 ```
@@ -28,13 +28,12 @@ To install locally, the [downloads](https://julialang.org/downloads/) page has d
 
 The [https://mybinder.org/](https://mybinder.org/) service in particular allows free access, though limited in terms of allotted memory and with a relatively short timeout for inactivity.
 
-* [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jverzani/CalculusWithJuliaBinder.jl/main?labpath=blank-notebook.ipynb) (Image without SymPy)
+(The prepared `binder` images belong to the original notes and carry the upstream
+`CalculusWithJulia` package, not this fork, so `CalculusWithJuliaSquared` has to be installed
+into them as below.)
 
 
-* [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/jverzani/CalculusWithJuliaBinder.jl/sympy?labpath=blank-notebook.ipynb) (Image with SymPy, longer to load)
-
-
-[Google colab](https://colab.research.google.com/) offers a free service with more computing power than `binder`, though setup is a bit more fussy. To use `colab` along with these notes, you need to execute a command that downloads `Julia` and installs the `CalculusWithJulia` package and a plotting package. (Modify the `pkg"add ..."` command to add other desired packages; update the julia version as necessary):
+[Google colab](https://colab.research.google.com/) offers a free service with more computing power than `binder`, though setup is a bit more fussy. To use `colab` along with these notes, you need to execute a command that downloads `Julia` and installs the `CalculusWithJuliaSquared` package (which brings a plotting package with it). (Modify the `pkg"add ..."` command to add other desired packages; update the julia version as necessary):
 
 
 > Go to google colab:
@@ -51,10 +50,8 @@ The [https://mybinder.org/](https://mybinder.org/) service in particular allows 
 
 ```
 using Pkg
-Pkg.add("Plots")
-Pkg.add("CalculusWithJulia")
-using CalculusWithJulia
-using Plots
+Pkg.add(url="https://github.com/FourMInfo/CalculusWithJuliaSquared.jl")
+using CalculusWithJuliaSquared
 ```
 
 
@@ -142,15 +139,24 @@ To use `Pkg` to "add" another package, we would have a command like:
 
 ```{julia}
 #| eval: false
-Pkg.add("CalculusWithJulia")
+Pkg.add("Plots")
 ```
 
-This command instructs `Julia` to look at its *general registry* for the `CalculusWithJulia.jl` package, download it, then install it. Once installed, a package only  needs to be brought into play with the `using` or `import` commands.
+This command instructs `Julia` to look at its *general registry* for the `Plots.jl` package, download it, then install it. Once installed, a package only  needs to be brought into play with the `using` or `import` commands.
+
+Not every package is in the general registry. `CalculusWithJuliaSquared` is not---it is a
+study fork kept on `GitHub`---so it is installed by giving its location directly:
+
+
+```{julia}
+#| eval: false
+Pkg.add(url="https://github.com/FourMInfo/CalculusWithJuliaSquared.jl")
+```
 
 
 :::{.callout-note}
 ## Note
-In a terminal setting, there is a package mode, entered by typing `]` as the leading character and exited by entering `<backspace>` at a blank line. This mode allows direct access to `Pkg` with a simpler syntax. The command above would be just `add CalculusWithJulia`. As well, when a package is not installed, calling `using SomePackage` will prompt the user if they wish to install the package in the current environment.)
+In a terminal setting, there is a package mode, entered by typing `]` as the leading character and exited by entering `<backspace>` at a blank line. This mode allows direct access to `Pkg` with a simpler syntax. The command above would be just `add Plots`. As well, when a package is not installed, calling `using SomePackage` will prompt the user if they wish to install the package in the current environment.)
 
 :::
 
@@ -165,11 +171,9 @@ For these notes, the following packages, among others, are used:
 
 ```{julia}
 #| eval: false
-Pkg.add("CalculusWithJulia") # for some convenience functions and a few packages (SpecialFunctions, ForwardDiff)
-Pkg.add("Plots")       # for basic plotting
-Pkg.add("SymPy")       # for symbolic math
-Pkg.add("Roots")       # for numerically solving  `f(x)=0` and `f(x)=g(x)`
-Pkg.add("QuadGk")      # for 1-dimensional numeric integration
+Pkg.add("CalculusWithJuliaSquared") # convenience functions, and it re-exports Plots,
+                                    # Symbolics, Roots, LaTeXStrings and more
+Pkg.add("QuadGK")      # for 1-dimensional numeric integration
 Pkg.add("HQuadrature") # for higher-dimensional integration
 ```
 
@@ -247,7 +251,7 @@ When different types of numbers are mixed, `Julia` will usually promote the valu
 `Julia` will first add `2` and `1//2` promoting `2` to rational before doing so. Then add the result, `5//2` to `0.5` by promoting `5//2` to the floating point number `2.5` before proceeding.
 
 
-`Julia` uses a special type to store a handful of irrational constants such as `pi`. The special type allows these constants to be treated without round off, until they mix with other floating point numbers. An irrational value for `e` is not exported; the `CalculusWithJulia` exports a floating point value `e=exp(1)`.
+`Julia` uses a special type to store a handful of irrational constants such as `pi`. The special type allows these constants to be treated without round off, until they mix with other floating point numbers. An irrational value for `e` is not exported; `CalculusWithJuliaSquared` exports a floating point value `e=exp(1)`.
 
 
 There are some functions that require these be explicitly promoted to floating point. This can be done by calling `float`.
@@ -646,18 +650,14 @@ In `Julia` the equals sign is **only** for *assignment* and *mutation*. The *lef
 ## Symbolic math
 
 
-Symbolic math is available through an add-on package `SymPy` (among others).  Once loaded, symbolic variables in `SymPy` are created with the macro `@syms`:
+Symbolic math comes with `CalculusWithJuliaSquared`, which re-exports the `Symbolics` package---so no separate `using` is needed. Symbolic variables are created with the macro `@variables`:
 
 
 ```{julia}
-using SymPy
+@variables x a b c
 ```
 
-```{julia}
-@syms x a b c
-```
-
-(A macro rewrites values into other commands before they are interpreted. Macros are prefixed with the `@` sign. In this use, the "macro" `@syms` translates `x a b c` into a command involving `SymPy`s `symbols` function.)
+(A macro rewrites values into other commands before they are interpreted. Macros are prefixed with the `@` sign. In this use, the "macro" `@variables` turns `x a b c` into commands that both create the symbolic objects and assign them to those names.)
 
 
 Symbolic expressions---unlike numeric expressions---are not immediately evaluated, though they may be  simplified:
@@ -669,23 +669,24 @@ p = a*x^2 + b*x + c
 
 The above command illustrates that the mathematical operations of `*`, `^`, and `+` work with symbolic objects. This is the case for most mathematical functions as well.
 
-To substitute a value, we can use `Julia`'s `pair` notation (`variable=>value`):
+To substitute a value, `substitute` is called with a dictionary of `variable => value` pairs:
 
 
 ```{julia}
-p(x=>2), p(x=>2, a=>3, b=>4, c=>1)
+substitute(p, Dict(x => 2)), substitute(p, Dict(x => 2, a => 3, b => 4, c => 1))
 ```
 
-This is convenient notation for calling the `subs` function for `SymPy`.
-
-
-SymPy expressions of a single free variable can be plotted directly:
+Symbolic expressions of a single free variable can be plotted directly:
 
 
 ```{julia}
 plot(64 - (1/2)*32 * x^2, 0, 2)
 ```
 
-  * SymPy has functions for manipulating expressions: `simplify`, `expand`, `together`, `factor`, `cancel`, `apart`,  $...$
-  * SymPy has functions for basic math: `factor`, `roots`, `solve`, `solveset`, $\dots$
-  * SymPy has functions for calculus: `limit`, `diff`, `integrate`, $\dots$
+The symbolic functions used in these notes are:
+
+  * for manipulating expressions: `simplify`, `expand`, `simplify_fractions` (which both cancels common factors and puts a sum of fractions over a common denominator), `factored_poly`, and `partial_fractions`
+  * for basic math: `symbolic_solve` for exact solutions, `factored_poly` and `poly_factors` for factoring over the rationals, and `numeric_roots` for the roots of a polynomial as ordinary numbers
+  * for calculus: `symlim` for limits, and `derivative` (or the prime notation, `f'`) for derivatives
+
+There is no symbolic *integration* in this set; the integral chapters use numeric integration instead.

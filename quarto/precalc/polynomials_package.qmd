@@ -7,18 +7,16 @@ This section will use the following add-on packages:
 
 
 ```{julia}
-import CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
 using Polynomials
 using RealPolynomialRoots
-import SymPy # imported only: some functions, e.g. degree, need qualification
 ```
 
 ---
 
 
-While `SymPy` can be used to represent polynomials, there are also native `Julia` packages available for this and related tasks. These packages include `Polynomials`, `MultivariatePolynomials`, and `AbstractAlgebra`, among many others. (A search on [juliahub.com](https://juliahub.com) found almost $100$ packages matching "polynomial".) We will look at the `Polynomials` package in the following, as it is straightforward to use and provides the features we are looking at for *univariate* polynomials.
+While `Symbolics` can be used to represent polynomials, there are also `Julia` packages devoted to them and to related tasks. These packages include `Polynomials`, `MultivariatePolynomials`, and `AbstractAlgebra`, among many others. (A search on [juliahub.com](https://juliahub.com) found almost $100$ packages matching "polynomial".) We will look at the `Polynomials` package in the following, as it is straightforward to use and provides the features we are looking at for *univariate* polynomials.
 
 
 ## Construction
@@ -182,7 +180,7 @@ A consequence of the fundamental theorem of algebra and the factor theorem is th
 
 :::{.callout-note}
 ## Note
-`SymPy` also has a `roots` function. If both `Polynomials` and `SymPy` are used together, calling `roots` must be qualified, as with `Polynomials.roots(...)`. Similarly, `degree` is exported in both, so it too must be qualified.
+`roots` here is the one from `Polynomials`, which works on a `Polynomial` object and answers numerically. The symbolic counterpart is `symbolic_solve`, which takes an expression and a variable and answers exactly where it can. The two names do not collide, so neither needs qualifying.
 
 :::
 
@@ -268,16 +266,18 @@ a\cdot x_2^2 + b\cdot x_2 + c &= y_2\\
 $$
 
 
-Solving this with `SymPy` is tractable. A generator is used below to create the $3$ equations; the `zip` function is a simple means to iterate over $2$ or more iterables simultaneously:
+Solving this symbolically is tractable. A comprehension is used below to create the $3$ equations; the `zip` function is a simple means to iterate over $2$ or more iterables simultaneously. As the equations are *linear* in $a$, $b$ and $c$, `symbolic_linear_solve` is the tool, and `simplify` is worth applying to the result---without it the answer arrives as a nest of fractions:
 
 
 ```{julia}
-SymPy.@syms a b c xs[0:2] ys[0:2]
-eqs = tuple((a*xi^2 + b*xi + c ~ yi for (xi,yi) in zip(xs, ys))...)
-abc = SymPy.solve(eqs, (a,b,c))
+@variables a b c
+@variables xs[0:2] ys[0:2]
+X, Y = collect(xs), collect(ys)
+eqs = [a*xi^2 + b*xi + c ~ yi for (xi, yi) in zip(X, Y)]
+abc = simplify.(symbolic_linear_solve(eqs, [a, b, c]))
 ```
 
-As can be seen, the terms do get quite unwieldy when treated symbolically. Numerically, the `fit` function from the `Polynomials` package will return the interpolating polynomial. To compare,
+The three answers come back in the order asked for, so `abc[1]`, `abc[2]` and `abc[3]` are $a$, $b$ and $c$. Each is a ratio of two sums---this is Cramer's rule, with the denominator the same determinant in all three. The terms do get long when treated symbolically. Numerically, the `fit` function from the `Polynomials` package will return the interpolating polynomial. To compare,
 
 
 ```{julia}
@@ -288,10 +288,10 @@ and we can compare that the two give the same answer with, for example:
 
 
 ```{julia}
-abc[b]((xs .=> [1,2,3])..., (ys .=> [3,1,2])...)
+substitute(abc[2], Dict((X .=> [1,2,3])..., (Y .=> [3,1,2])...))
 ```
 
-(Ignore the tricky way of substituting in each value of `xs` and `ys` for the symbolic values in `x` and `y`.)
+(`substitute` takes a dictionary pairing each symbolic value with the number to put in its place; the `...` splats the two lists of pairs into one dictionary.)
 
 
 ##### Example Inverse quadratic interpolation
@@ -302,10 +302,12 @@ A related problem, that will arise when finding iterative means to solve for zer
 
 ```{julia}
 #| hold: true
-SymPy.@syms a b c xs[0:2] ys[0:2]
-eqs = tuple((a*yi^2 + b*yi + c ~ xi for (xi, yi) in zip(xs,ys))...)
-abc = SymPy.solve(eqs, (a,b,c))
-abc[c]
+@variables a b c
+@variables xs[0:2] ys[0:2]
+X, Y = collect(xs), collect(ys)
+eqs = [a*yi^2 + b*yi + c ~ xi for (xi, yi) in zip(X, Y)]
+abc = simplify.(symbolic_linear_solve(eqs, [a, b, c]))
+abc[3]     # the constant term
 ```
 
 We can graphically see the result for the specific values of `xs` and `ys` as follows:
@@ -314,10 +316,12 @@ We can graphically see the result for the specific values of `xs` and `ys` as fo
 ```{julia}
 #| hold: true
 #| echo: false
-SymPy.@syms a b c xs[0:2] ys[0:2]
-eqs = tuple((a*yi^2 + b*yi + c ~ xi for (xi, yi) in zip(xs,ys))...)
-abc = SymPy.solve(eqs, (a,b,c))
-abc[c]
+@variables a b c
+@variables xs[0:2] ys[0:2]
+X, Y = collect(xs), collect(ys)
+eqs = [a*yi^2 + b*yi + c ~ xi for (xi, yi) in zip(X, Y)]
+abc = simplify.(symbolic_linear_solve(eqs, [a, b, c]))
+abc[3]     # the constant term
 
 𝒙s, 𝒚s = [1,2,3], [3,1,2]
 q = fit(Polynomial, 𝒚s,  𝒙s)  # reverse
@@ -327,8 +331,8 @@ vs = q.(us)
 plot(vs, us, legend=false)
 scatter!(𝒙s, 𝒚s)
 plot!(zero)
-x0 = abc[c]((xs .=> 𝒙s)..., (ys .=> 𝒚s)...)
-scatter!([SymPy.N(x0)], [0], markershape=:star)
+x0 = substitute(abc[3], Dict((X .=> 𝒙s)..., (Y .=> 𝒚s)...))
+scatter!([Float64(Symbolics.symbolic_to_float(x0))], [0], markershape=:star)
 ```
 
 ## Questions
