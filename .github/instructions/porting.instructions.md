@@ -72,7 +72,8 @@ it** — display the free-parameter result alongside the pinned one. An answer t
 for a branch the reader did not intend is more dangerous than a refusal.
 
 See the `sciml-coding-conventions` skill's **STOP RULE** for the mechanical trigger and the
-catalogue of rewrites to try before concluding that no route exists.
+catalogue of rewrites to try before concluding that no route exists. The measured map of which
+engine takes which limit — Gruntz, Taylor, interval bounding — is in `symbolic-limits-julia`.
 
 ### Where prose asserts what a route can show, show it
 
