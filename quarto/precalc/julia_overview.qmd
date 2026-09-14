@@ -687,6 +687,8 @@ The symbolic functions used in these notes are:
 
   * for manipulating expressions: `simplify`, `expand`, `simplify_fractions` (which both cancels common factors and puts a sum of fractions over a common denominator), `factored_poly`, and `partial_fractions`
   * for basic math: `symbolic_solve` for exact solutions, and `factored_poly` and `poly_factors` for factoring over the rationals
+  * for polynomials: `numeric_roots` for every root as a floating-point number (`real_only=true` keeps only the real ones); `root_enclosures` for the real roots as intervals, each *guaranteed* to contain one root; and Julia's generic `divrem(p, q)`, which works on symbolic polynomials just as on integers, returning the quotient and remainder
+  * for display: `conventional_latex`, which typesets an expression the way a mathematics text writes it---`x - 1` rather than `-1 + x`
   * for calculus: `symlim` for limits; `f'` or `D(f)` for the derivative of a *function*, and `Symbolics.derivative(ex, var)` for the derivative of a symbolic *expression*
 
 There is no symbolic *integration* in this set; the integral chapters use numeric integration instead.
