@@ -214,6 +214,47 @@ Then diff the rendered `(value, :route)` pairs against the previous render and c
 change is one the release actually predicts. A route or value that moves *unexpectedly* is
 the signal to stop, not something to commit past.
 
+### Render the book against a CWJS branch while its PR is open
+
+**When:** any CWJS change a published page could show — `show`, `conventional_latex`, a limit
+route, a value. Default to yes; skip only for a change that provably cannot reach a page (tests,
+CI configuration). The *when* is also stated on the CWJS side, in its
+`.github/copilot-instructions.md` → "Versioning & Releases", which points here for the *how*.
+
+**Order: open the CWJS PR → replay the book while the PR is reviewed → push any fix to the PR →
+merge on the go-ahead.** Aron, 2026-09-15: the PR goes up first so the ~20-minute renders are
+review time, and what the replay finds lands as a small follow-up push. A problem found this
+way is fixed inside the PR, not by a patch release plus another re-pin of every consumer.
+
+**Full, not scoped.** Re-render every published chapter, not only the cells you reason the
+change can reach — that reasoning is the belief the replay tests. v0.14.0's pre-merge replay
+was scoped and sound for an additive release; v0.15.0 changed how every symbolic cell
+displays, and its full replay found two defects the package's 700-assertion suite did not (a
+derivative notation that read as the derivative of a product, and array elements sorted
+without their index) plus a paragraph that no longer matched its cell.
+
+**How** (measured 2026-09-15; the scripts are local, in `_research/scripts/`):
+
+1. **Point each chapter environment at the branch.** For every environment the consumer search
+   finds (commands in CWJS "Versioning & Releases" — never a remembered list), raise `[compat]`
+   to the branch's version and set `[sources]` to `{path = "<CWJS checkout>"}`.
+   `Pkg.develop(path = ...)` refuses while `[sources]` names the URL (*"`path` and `url` are
+   conflicting specifications"*), so edit the line, then `Pkg.resolve()` and read the version
+   back from `Pkg.dependencies()`.
+2. **`Pkg.precompile()` each environment**, so no render starts cold (see "A cold render can
+   freeze precompilation into a page", below).
+3. `_research/scripts/render_chapters.sh --fresh --stop-engine`
+4. `julia --project=_research/scripts _research/scripts/freeze_diff.jl` — and **read the prose
+   around every changed cell**: a paragraph that quotes an output, or says "the first term
+   cancels the third", can be falsified by a display change with no error anywhere. A rendering
+   that comes out worse is fixed in the package, not the chapter.
+5. **After a fix is pushed, re-render the affected chapters with `--fresh` again.** A chapter
+   whose `.qmd` did not change reuses its freeze, so without `--fresh` it silently shows the
+   pre-fix output.
+6. **Restore:** `git checkout -- quarto/*/Project.toml quarto/_freeze` and re-resolve each
+   environment. Nothing from the replay is committed; after the merge and re-pin, the real
+   re-render rides in the chapter PR against the released version.
+
 ## Render discipline (Quarto can hang — guarantee liveness)
 
 - **One chapter at a time**: `quarto render <chapter>.qmd`, never the whole book to check a port. Each `.qmd` → its own `.html`; a hang in one render can't touch other chapters' already-built outputs.
@@ -222,6 +263,21 @@ the signal to stop, not something to commit past.
 - **Only the *first* render in a session is slow — iterating is cheap.** The cold render loads the group's whole env (CWJS + Plots + ~25 deps) *and* executes every cell — that's the ~15 min the timeout is sized for. Re-rendering after editing a few cells is **< 1 min**: `_freeze` supplies the untouched cells and QuartoNotebookRunner keeps a warm worker (packages stay loaded), so only the changed cells re-run. (Observed 2026-08-16: a cold render logged `Running [1/93]…[93/93]`; the next, after a 5-cell edit, logged *zero* `Running` lines yet still emitted the updated outputs.) So don't contort the workflow to dodge "a second render" — only the first one is expensive.
 - **Correctness ≠ display**: the port check is (a) all cells execute error-free and (b) output matches upstream — both in the *execution* stage. The stage that hangs is usually HTML/plotly *embedding*, a display concern; a hung embed is not proof the port is wrong. Isolate heavy figures (usually plotly) separately.
 - Per-cell `execute: timeout:` is a possible backstop but UNVERIFIED for the native Julia engine (QuartoNotebookRunner) — the external wall-clock timeout is the reliable mechanism.
+- **Local tools, in `_research/scripts/`** (gitignored — the port runs on one machine, beside
+  its plan; each script's header gives usage and one-time setup):
+  `render_chapters.sh [--fresh] [--stop-engine] [chapter...]` renders one chapter at a time
+  under a timeout (no arguments = every published chapter, parsed from `_quarto.yml`);
+  `freeze_diff.jl [--rev REV] [--full] [chapter...]` diffs freezes against a git revision cell
+  by cell; `freeze_cell.jl <group/chapter> <snippet> [--rev REV]` prints one executed cell.
+- **A cold render can freeze precompilation into a page.** On a cold start the first cell's
+  output can capture *"Precompiling packages… QuartoNotebookWorkerPlotsExt"*, and that text
+  ships on the live page (hit `basics/calculator`, 2026-09-14). `Pkg.precompile()` the group
+  environment first; `freeze_diff.jl` warns on it; if it happens, re-render that chapter warm.
+- **Every render re-randomises some output**, so a raw freeze diff is never empty: quiz choice
+  order (the correct index moves with it), QuizQuestions widget ids, Plots.jl plotly div ids,
+  unseeded `rand()` values, BigFloat digits past the ~65th figure. `freeze_diff.jl` normalises
+  only differences observed to be meaningless, each documented in its header; add a rule only
+  for an observed case, and test that a real change is still reported.
 - **Check the output in a browser, served over HTTP** — `julia --project=@liveserver -e 'using LiveServer; serve(dir="quarto/_book", port=8001)'` from the repo root (the shared `@liveserver` environment; see the `documenter-jl-conventions` skill), or `quarto preview`. Never `python3 -m http.server`: this fork exists to remove Python, and Aron does not use it. Grepping the HTML proves a cell *executed*; it does not prove the page *displays*. Interactive figures depend on JavaScript that only runs in a real browser.
 
 ### A render can silently use the WRONG package version
