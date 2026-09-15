@@ -669,6 +669,16 @@ p = a*x^2 + b*x + c
 
 The above command illustrates that the mathematical operations of `*`, `^`, and `+` work with symbolic objects. This is the case for most mathematical functions as well.
 
+The output is displayed the way a mathematics text writes it: highest power of the variable first, coefficients ahead of the variable. Which letters count as variables follows convention too---$x$, $y$, $z$, $t$, $n$, $r$, $\theta$ and a few others---while $a$, $b$, $c$ are treated as constants. When the variable is some other letter, the ordering has nothing to go on. `conventional_latex` returns the LaTeX for an expression and accepts the variables explicitly:
+
+
+```{julia}
+@variables s k
+conventional_latex(expand((s - k)^2)), conventional_latex(expand((s - k)^2); variables = [s])
+```
+
+To change it for the display of every later cell instead, `set_conventional_default(variables = [s])` sets it for the rest of the session and `reset_conventional_default()` undoes it. (The same function takes `order = :ascending`, for expressions such as a Taylor polynomial that are written lowest power first.)
+
 To substitute a value, `substitute` is called with a dictionary of `variable => value` pairs:
 
 
@@ -688,7 +698,7 @@ The symbolic functions used in these notes are:
   * for manipulating expressions: `simplify`, `expand`, `simplify_fractions` (which both cancels common factors and puts a sum of fractions over a common denominator), `factored_poly`, and `partial_fractions`
   * for basic math: `symbolic_solve` for exact solutions, and `factored_poly` and `poly_factors` for factoring over the rationals
   * for polynomials: `numeric_roots` for every root as a floating-point number (`real_only=true` keeps only the real ones); `root_enclosures` for the real roots as intervals, each *guaranteed* to contain one root; and Julia's generic `divrem(p, q)`, which works on symbolic polynomials just as on integers, returning the quotient and remainder
-  * for display: `conventional_latex`, which typesets an expression the way a mathematics text writes it---`x - 1` rather than `-1 + x`
+  * for display: every symbolic output is already typeset conventionally; `conventional_latex` returns that LaTeX as a string, for building LaTeX of your own (such as a table), and `set_conventional_default` / `reset_conventional_default` choose the variables and the direction a sum runs for the rest of a session
   * for calculus: `symlim` for limits; `f'` or `D(f)` for the derivative of a *function*, and `Symbolics.derivative(ex, var)` for the derivative of a symbolic *expression*
 
 There is no symbolic *integration* in this set; the integral chapters use numeric integration instead.

@@ -1837,9 +1837,22 @@ Some limits involve parameters. For example, suppose we define `ex` as follows:
 
 
 ```{julia}
+#| echo: false
+#| output: false
+# display (1 + k x) the way the (1 + u)^(1/u) limit is written; reset after the next cell
+set_conventional_default(; order = :ascending)
+```
+
+```{julia}
 #| hold: true
 @variables m::Real k::Real
 ex = (1 + k*x)^(m/x)
+```
+
+```{julia}
+#| echo: false
+#| output: false
+reset_conventional_default()
 ```
 
 What is $\lim_{x \to 0}$ of this expression?

@@ -492,9 +492,22 @@ over a range that is known:
 
 
 ```{julia}
+#| echo: false
+#| output: false
+# a partial sum of a series is written in ascending powers; reset after the next cell
+set_conventional_default(; order = :ascending)
+```
+
+```{julia}
 #| hold: true
 @variables x
 sum(x^i for i in 0:3)          # a concrete range: fine
+```
+
+```{julia}
+#| echo: false
+#| output: false
+reset_conventional_default()
 ```
 
 Writing `0:n` for a symbolic `n` fails before `Symbolics` is even involved, since the range
