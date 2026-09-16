@@ -16,6 +16,39 @@ Triage each chapter's SymPy usage into four classes:
 
 Anchor: expand `alternatives/symbolics.qmd` into the canonical symbolic-math reference other chapters link to, instead of duplicating setup boilerplate per chapter.
 
+### CWJS work comes before chapter work — and is scoped from every chapter it will serve
+
+Aron, 2026-09-16: **(1) do the CWJS work before the CWJSN work, so no chapter is written twice;
+(2) for that reason, before any CWJS round, review the chapters of the *next* chapter PR as well
+as the current one.** A release scoped from one PR's chapters is followed by another release,
+another re-pin of every consumer and another full re-render when the next PR starts.
+
+The review is cell by cell with the prose alongside, and it inventories **what the reader
+sees**, not only what computes (next section). v0.14.0's scope nearly missed `divrem` because
+only a capability map had been consulted; v0.15.0's missed tuples and vectors because only
+computation had been.
+
+### Inventory what the reader SEES, not only what computes
+
+A cell that computes the right thing can still show the reader Julia syntax instead of
+mathematics. **What reaches the page is decided by the value's type**, and the rule, measured
+2026-09-16 in QuartoNotebookRunner's worker (`render.jl`, `render_mimetypes`), is: on an HTML
+page **`text/html` wins, but `text/latex` does not beat `text/plain`.** So only types that CWJS
+gives a `text/html` method typeset — a scalar `Num` and the `symbolic_solve` vector. Measured
+exceptions that print as plain text even though Latexify can typeset them:
+
+- a `Vector{Num}` (`poly_factors`, `exact_trig_values.(…)`, the echo of `@variables`);
+- a `Tuple` holding symbolic values (`divrem`, `symlim`'s `(value, route)`, `a, b` at the end of
+  a cell);
+- a single element of a `symbolic_solve` result, and anything computed from one — they are
+  unwrapped `BasicSymbolic`, not `Num`.
+
+Run each port candidate through `_research/scripts/quarto_view.jl` (local), which prints the
+view a page will give, and include **the bare calls the prose or a quiz tells the reader to
+make** ("Use `poly_factors` to…") — those are output a reader sees too, just not on the page.
+Whether a type is typeset can change between CWJS releases (see the 2026-09-16 review in
+`_research/CHAPTER_MAP.md`); the script, not this list, is the authority.
+
 ## Choosing What to Show: Symbolic, Intermediate, or Numeric
 
 **Understanding is the primary objective — it outranks line-for-line fidelity to upstream.** Where SymPy's symbolic result has no Symbolics equivalent (classes **L** and **I** especially), do *not* reflexively drop to a final number. Decide deliberately, at each site, which form teaches best:
@@ -139,6 +172,7 @@ Rendered output lands in `_book/` (gitignored), not beside the `.qmd`.
 
 - `using CalculusWithJulia` → `using CalculusWithJuliaSquared` flipped; no `SymPy` references remain in the chapter
 - `quarto render` of the chapter succeeds (code executes at build — this is the test)
+- **No symbolic output shows as plain Julia syntax**: `_research/scripts/untypeset_scan.jl <group>/<chapter>` reports no hit beyond the known-harmless ones in its header (see "Inventory what the reader SEES")
 - `typos` clean
 - Math output verified against the upstream published page for the same chapter (results should match, not just run). Where the port *deliberately* diverges (classes **L**/**I** — see "Choosing What to Show"), identical output is not the standard: verify the mathematics independently and make the divergence explicit in the prose.
 - **Every external link in the chapter resolves.** These notes are years old and their
@@ -248,10 +282,15 @@ without their index) plus a paragraph that no longer matched its cell.
    around every changed cell**: a paragraph that quotes an output, or says "the first term
    cancels the third", can be falsified by a display change with no error anywhere. A rendering
    that comes out worse is fixed in the package, not the chapter.
-5. **After a fix is pushed, re-render the affected chapters with `--fresh` again.** A chapter
+5. **Then scan the whole result, not only what changed:**
+   `julia --project=_research/scripts _research/scripts/untypeset_scan.jl`. A diff reports only
+   differences, so output that was plain text before the change *and* after it is invisible to
+   step 4. That is how an untypeset `Vector{Num}` on `trig_functions` and symbolic tuples on four
+   more pages survived v0.15.0's full replay (found 2026-09-16).
+6. **After a fix is pushed, re-render the affected chapters with `--fresh` again.** A chapter
    whose `.qmd` did not change reuses its freeze, so without `--fresh` it silently shows the
    pre-fix output.
-6. **Restore:** `git checkout -- quarto/*/Project.toml quarto/_freeze` and re-resolve each
+7. **Restore:** `git checkout -- quarto/*/Project.toml quarto/_freeze` and re-resolve each
    environment. Nothing from the replay is committed; after the merge and re-pin, the real
    re-render rides in the chapter PR against the released version.
 
@@ -268,7 +307,9 @@ without their index) plus a paragraph that no longer matched its cell.
   `render_chapters.sh [--fresh] [--stop-engine] [chapter...]` renders one chapter at a time
   under a timeout (no arguments = every published chapter, parsed from `_quarto.yml`);
   `freeze_diff.jl [--rev REV] [--full] [chapter...]` diffs freezes against a git revision cell
-  by cell; `freeze_cell.jl <group/chapter> <snippet> [--rev REV]` prints one executed cell.
+  by cell; `freeze_cell.jl <group/chapter> <snippet> [--rev REV]` prints one executed cell;
+  `untypeset_scan.jl [chapter...]` lists plain-text outputs that look symbolic;
+  `quarto_view.jl` (included from a probe script) prints what a page will show for a value.
 - **A cold render can freeze precompilation into a page.** On a cold start the first cell's
   output can capture *"Precompiling packages… QuartoNotebookWorkerPlotsExt"*, and that text
   ships on the live page (hit `basics/calculator`, 2026-09-14). `Pkg.precompile()` the group
