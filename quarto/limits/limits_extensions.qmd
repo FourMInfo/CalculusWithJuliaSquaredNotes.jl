@@ -133,7 +133,7 @@ default, `side = :both`, is the two-sided limit of the definition above.
 
 
 ```{julia}
-@variables x
+@variables x;
 ```
 
 ```{julia}

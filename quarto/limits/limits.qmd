@@ -2033,7 +2033,7 @@ Archimedes, in finding bounds on the value of $\pi$ used $n$-gons with sides $12
 
 
 ```{julia}
-@variables theta::Real r::Real
+@variables theta::Real r::Real;
 ```
 
 ```{julia}

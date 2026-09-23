@@ -34,14 +34,25 @@ A cell that computes the right thing can still show the reader Julia syntax inst
 mathematics. **What reaches the page is decided by the value's type**, and the rule, measured
 2026-09-16 in QuartoNotebookRunner's worker (`render.jl`, `render_mimetypes`), is: on an HTML
 page **`text/html` wins, but `text/latex` does not beat `text/plain`.** So only types that CWJS
-gives a `text/html` method typeset — a scalar `Num` and the `symbolic_solve` vector. Measured
-exceptions that print as plain text even though Latexify can typeset them:
+gives a `text/html` method typeset. As of CWJS 0.16.0 (measured 2026-09-23) those are:
 
-- a `Vector{Num}` (`poly_factors`, `exact_trig_values.(…)`, the echo of `@variables`);
-- a `Tuple` holding symbolic values (`divrem`, `symlim`'s `(value, route)`, `a, b` at the end of
-  a cell);
-- a single element of a `symbolic_solve` result, and anything computed from one — they are
-  unwrapped `BasicSymbolic`, not `Num`.
+- a scalar `Num`, and a single unwrapped `BasicSymbolic` (an element of a `symbolic_solve`
+  result, or anything computed from one);
+- a `Vector{Num}` (a column: `poly_factors`, `exact_trig_values.(…)`) and a `Matrix{Num}`
+  (a grid: `jacobian`, `hessian`);
+- a `Tuple` holding a symbolic value in any of its first 16 positions (`divrem`, `substitute`
+  pairs, `a, b` at the end of a cell), with a `Symbol`, `Bool` or `String` element in code font;
+- whatever `symlim` returns, whatever the value (a number, `Inf`, `nothing`), and a vector of
+  such results.
+
+Still plain text: a tuple with nothing symbolic in it (`(1, 2)` — deliberately, so plot
+options and counts keep Julia's display), a bare array variable (`zs` after
+`@variables zs[1:3]`, a `Symbolics.Arr`), and an array of three or more dimensions.
+
+**The echo of `@variables` now typesets too** — `@variables x a b c` returns a `Vector{Num}`,
+so a cell that ends with it shows a column of the variables. End such a cell with `;` (Quarto
+hides the output of a cell whose last line ends in `;`), unless the prose wants the column.
+The mechanism and its gotchas are in the `symbolics-typesetting` skill.
 
 Run each port candidate through `_research/scripts/quarto_view.jl` (local), which prints the
 view a page will give, and include **the bare calls the prose or a quiz tells the reader to
