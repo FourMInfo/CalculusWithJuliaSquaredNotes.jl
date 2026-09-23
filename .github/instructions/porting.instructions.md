@@ -216,7 +216,12 @@ and executing them would drag Python into a fork whose purpose is removing it.
 **To publish a newly ported chapter — one commit, three parts:**
 
 1. **Render it locally.** That writes `quarto/_freeze/<group>/<chapter>/execute-results/html.json`,
-   which is the executed output CI will assemble.
+   which is the executed output CI will assemble. **Only for a chapter listed in `_quarto.yml`:**
+   a chapter still in the commented archive renders *standalone* — no freeze, and a stray
+   `<chapter>.html` beside the `.qmd`. To render one before promoting it (to check a port),
+   add its line temporarily, render, and restore the file; delete any stray HTML.
+   (`untypeset_scan.jl` now fails on a named chapter with no freeze; it used to report
+   "0 hits" for a chapter it never read.)
 2. **Promote it in `quarto/_quarto.yml`** — move its line out of the commented "NOT YET PORTED"
    archive into the published list above it.
 3. **Commit the `_freeze/` file *and* `_quarto.yml` together**, then push to `main`.
