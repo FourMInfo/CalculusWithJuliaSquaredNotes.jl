@@ -16,4 +16,4 @@ TextWrap = "b718987f-49a8-5099-9789-dcd902bef87d"
 CalculusWithJuliaSquared = {rev = "main", url = "https://github.com/FourMInfo/CalculusWithJuliaSquared.jl"}
 
 [compat]
-CalculusWithJuliaSquared = "0.16.0"
+CalculusWithJuliaSquared = "0.17.0"
