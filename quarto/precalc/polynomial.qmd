@@ -10,6 +10,7 @@ In this section we use the following add-on packages:
 
 
 ```{julia}
+#| output: false
 using CalculusWithJuliaSquared
 plotly()
 ```
