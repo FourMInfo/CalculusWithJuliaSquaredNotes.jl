@@ -297,7 +297,7 @@ In general, there is no such formula using radicals for $5$th degree polynomials
 The `factored_poly` function factors over the rational numbers: every factor it finds has rational coefficients, so each linear factor it finds corresponds to a rational root. Irrational roots stay hidden inside a factor it leaves whole. There are alternatives.
 
 
-Finding roots can also be done through the `symbolic_solve` function, a function which also has a more general usage, as it can solve other kinds of equations too. Here we illustrate that `symbolic_solve` can easily handle quadratic expressions:
+Finding roots can also be done through the `symbolic_solve` function, a function which also has a more general usage, as it can solve other kinds of equations too. (It can also solve several polynomial equations at once, such as where a circle meets a line, but that needs one more package, `Groebner`, which these notes do not load yet.) Here we illustrate that `symbolic_solve` can easily handle quadratic expressions:
 
 
 ```{julia}
@@ -392,6 +392,23 @@ rts[1]   # there are three roots
 ```
 
 This is Cardano's formula. The other two roots are written in the same cube roots, combined with the imaginary unit $i$. Each root $t$ of the depressed cubic gives the root $x = t - b/3$ of the original.
+
+
+The general formula is also the way to get *exact* roots of a cubic whose coefficients are numbers. Called directly on one, `symbolic_solve` writes the pieces of Cardano's formula as decimals, so its answer is no longer exact. For $t^3 + t + 1$, the $31/108$ inside the square root comes out as a long decimal, and its last digits show the rounding:
+
+
+```{julia}
+symbolic_solve(t^3 + t + 1 ~ 0, t)[1]
+```
+
+(This happens for a cubic with number coefficients that does not factor over the rational numbers. A cubic that does factor, and a cubic with symbolic coefficients like the one above, come out exact.) Substituting the numbers into the general formula instead keeps every piece exact. Here $p = 1$ and $q = 1$:
+
+
+```{julia}
+substitute(rts[1], Dict(p => 1, q => 1))
+```
+
+Both answers are the same number, about $-0.6823$; only the second is exact. Sometimes the substituted formula keeps a piece that could be simplified further by hand: for $x^3 - 2$, where $p = 0$ and $q = -2$, it leaves $\sqrt{1}$ inside the cube roots.
 
 
 Some fifth degree polynomials are solvable in terms of radicals, however, `symbolic_solve` will not seem to have luck with this particular fifth degree polynomial:
