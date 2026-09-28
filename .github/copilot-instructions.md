@@ -23,4 +23,4 @@ A **personal fork** of [jverzani/CalculusWithJuliaNotes.jl](https://github.com/j
 
 ## Workflow
 
-Follow the `phased-implementation-workflow` skill (branch per chapter-group/phase, PR, squash-merge on the user's word — no CI to wait for here). The detailed port plan (triage, ordering, verified capability findings) lives in the CalculusWithJuliaSquared.jl repo's local `_research/PHASE_D_NOTES.md`.
+Follow the `phased-implementation-workflow` skill (branch per chapter-group/phase, PR, squash-merge on the user's word — no CI to wait for here), and `test-design-discipline` for replaying published chapters against a library change before the merge. The detailed port plan (triage, ordering, verified capability findings) lives in the CalculusWithJuliaSquared.jl repo's local `_research/PHASE_D_NOTES.md`.

@@ -10,16 +10,8 @@ In this section we use the following add-on packages:
 
 
 ```{julia}
-using SymPy
-using Plots
+using CalculusWithJuliaSquared
 plotly()
-```
-
-```{julia}
-#| echo: false
-#| results: "hidden"
-using CalculusWithJulia
-nothing
 ```
 
 ---
@@ -29,10 +21,10 @@ nothing
 Polynomials are a particular class of expressions that are simple enough to have many properties that can be analyzed. In particular, the key concepts of calculus: limits, continuity, derivatives, and integrals are all relatively trivial for polynomial functions. However, polynomials are flexible enough that they can be used to approximate a wide variety of functions. Indeed, though we don't pursue this, we mention that `Julia`'s `ApproxFun` package exploits this to great advantage.
 
 
-Here we discuss some vocabulary and basic facts related to polynomials and show how the add-on `SymPy` package can be used to model polynomial expressions within `SymPy`. `SymPy` provides a Computer Algebra System (CAS) for `Julia`. In this case, by leveraging a mature `Python` package [SymPy](https://www.sympy.org/). Later we will discuss the `Polynomials` package for polynomials.
+Here we discuss some vocabulary and basic facts related to polynomials and show how the `Symbolics` package can be used to model polynomial expressions. `Symbolics` provides a Computer Algebra System (CAS) written in `Julia` itself; it comes with `CalculusWithJuliaSquared`, which re-exports it. Later we will discuss the `Polynomials` package for polynomials.
 
 
-For our purposes, a *monomial* is simply a non-negative integer power of $x$ (or some other indeterminate symbol) possibly multiplied by a scalar constant.  For example, $5x^4$ is a monomial, as are constants, such as $-2$ (it being $-2x^0$) and the symbol $x$ itself (it begin  $x^1$. In general, one may consider restrictions on where the constants can come from, and consider more than one symbol, but we won't pursue this here, restricting ourselves to the case of a single variable and real coefficients.
+For our purposes, a *monomial* is simply a non-negative integer power of $x$ (or some other indeterminate symbol) possibly multiplied by a scalar constant.  For example, $5x^4$ is a monomial, as are constants, such as $-2$ (it being $-2x^0$) and the symbol $x$ itself (it being $x^1$). In general, one may consider restrictions on where the constants can come from, and consider more than one symbol, but we won't pursue this here, restricting ourselves to the case of a single variable and real coefficients.
 
 
 A *polynomial* is a sum of monomials. After combining terms with same powers, a non-zero polynomial may be written uniquely as:
@@ -67,7 +59,7 @@ plotly()
 ImageFile(imgfile, caption)
 ```
 
-The numbers $a_0, a_1, \dots, a_n$ are the **coefficients** of the polynomial in the standard basis. With the identifications that $x=x^1$ and $1 = x^0$, the monomials above have their power match their coefficient's index, e.g., $a_ix^i$.  Outside of the coefficient $a_n$, the other coefficients may be negative, positive, *or* $0$. Except for the zero polynomial, the largest power $n$ is called the [degree](https://en.wikipedia.org/wiki/Degree_of_a_polynomial). The degree of the [zero](http://tinyurl.com/he6eg6s) polynomial is typically not defined or defined to be $-1$, so as to make certain statements easier to express. The term $a_n$ is called the **leading coefficient**. When the leading coefficient is $1$, the polynomial is called a **monic polynomial**. The monomial $a_n x^n$ is the **leading term**.
+The numbers $a_0, a_1, \dots, a_n$ are the **coefficients** of the polynomial in the standard basis. With the identifications that $x=x^1$ and $1 = x^0$, the monomials above have their power match their coefficient's index, e.g., $a_ix^i$.  Outside of the coefficient $a_n$, the other coefficients may be negative, positive, *or* $0$. Except for the zero polynomial, the largest power $n$ is called the [degree](https://en.wikipedia.org/wiki/Degree_of_a_polynomial). The degree of the [zero](https://en.wikipedia.org/wiki/Degree_of_a_polynomial#Degree_of_the_zero_polynomial) polynomial is typically not defined or defined to be $-1$, so as to make certain statements easier to express. The term $a_n$ is called the **leading coefficient**. When the leading coefficient is $1$, the polynomial is called a **monic polynomial**. The monomial $a_n x^n$ is the **leading term**.
 
 
 For example, the polynomial $-16x^2 - 32x + 100$ has degree $2$, leading coefficient $-16$ and leading term $-16x^2$. It is not monic, as the leading coefficient is not $1$.
@@ -138,36 +130,21 @@ Thinking in terms of transformations, this looks like the function $f(x) = x$ (w
 The indeterminate value `x` (or some other symbol) in a polynomial, is like a variable in a function and unlike a variable in `Julia`. Variables in `Julia` are identifiers,  just a means to look up a specific, already determined, value. Rather, the symbol `x` is not yet determined, it is essentially a place holder for a future value. Although we have seen that `Julia` makes it very easy to work with mathematical functions, it is not the case that base `Julia` makes working with expressions of algebraic symbols easy.  This makes sense, `Julia` is primarily designed for technical computing, where numeric approaches rule the day. However, symbolic math can be used from within `Julia` through add-on packages.
 
 
-Symbolic math programs include well-known ones like the commercial programs Mathematica and Maple. Mathematica powers the popular [WolframAlpha](www.wolframalpha.com) website, which turns "natural" language into the specifics of a programming language. The open-source [Sage](https://www.sagemath.org/) project is an alternative to these two commercial giants. It includes a wide-range of open-source math projects available within its umbrella framework. (`Julia` can even be run from within the free service [cloud.sagemath.com](https://cloud.sagemath.com/projects).) A more focused project for symbolic math, is the [SymPy](www.sympy.org) Python library. SymPy is also used within Sage. However, SymPy provides a self-contained library that can be used standalone within a Python session.
+Symbolic math programs include well-known ones like the commercial programs Mathematica and Maple. Mathematica powers the popular [WolframAlpha](https://www.wolframalpha.com) website, which turns "natural" language into the specifics of a programming language. The open-source [Sage](https://www.sagemath.org/) project is an alternative to these two commercial giants. It includes a wide-range of open-source math projects available within its umbrella framework. (`Julia` can even be run from within the free service [CoCalc](https://cocalc.ai), which began as the Sage project's cloud service.) A more focused project for symbolic math, is the [SymPy](https://www.sympy.org) Python library. SymPy is also used within Sage. However, SymPy provides a self-contained library that can be used standalone within a Python session.
 
-The [Symbolics](https://github.com/JuliaSymbolics/Symbolics.jl) package for `Julia` provides a "fast and modern CAS for fast and modern language." It is described further in [Symbolics.jl](../alternatives/symbolics.qmd).
-
-As `SymPy` has some features not yet implemented in `Symbolics`, we use `SymPy` in these notes. The `PyCall` and `PythonCall` packages are available to glue `Julia` to Python in a seamless manner. These allow the `Julia` package `SymPy` (or `SymPyPythonCall`) to provide functionality from SymPy within `Julia`.
-
-
-:::{.callout-note}
-## Note
-When `SymPy` is installed through the package manager, the underlying `Python` libraries will also be installed.
-
-:::
-
-:::{.callout-note}
-## Note
-The [`Symbolics`](../alternatives/symbolics) package is a rapidly developing `Julia`-only package that provides symbolic math options.
-
-:::
+The [Symbolics](https://github.com/JuliaSymbolics/Symbolics.jl) package for `Julia` provides a "fast and modern CAS for fast and modern language." It is written entirely in `Julia`, and it is the CAS these notes use. The symbolic functions used across the notes are listed in the [Julia overview](julia_overview.qmd#symbolic-math).
 
 ---
 
 
-To use `SymPy`, we create symbolic objects to be our indeterminate symbols. The `symbols` function does this. However, we will use the more convenient `@syms` macro front end for `symbols`.
+To work symbolically, we create symbolic objects to be our indeterminate symbols. The `@variables` macro does this:
 
 
 ```{julia}
-@syms a, b, c, x::real, zs[1:10]
+@variables a b c x zs[1:10];
 ```
 
-The above shows that multiple symbols can be defined at once. The annotation `x::real` instructs `SymPy` to assume the `x` is real, as otherwise it assumes it is possibly complex. There are many other [assumptions](http://docs.sympy.org/dev/modules/core.html#module-sympy.core.assumptions) that can be made. The `@syms` macro documentation lists them. The `zs[1:10]` tensor notation creates a container with $10$ different symbols.  The *macro* `@syms` does not need assignment, as the variable(s) are created behind the scenes by the macro.
+The above shows that multiple symbols can be defined at once. (The trailing `;` only hides the cell's output, a list of the new variables.) `Symbolics` treats a variable as a *real* number unless told otherwise, which is what we want for polynomials with real coefficients. The `zs[1:10]` notation creates a container of $10$ different symbols, `zs[1]` through `zs[10]`.  The *macro* `@variables` does not need assignment, as the variable(s) are created behind the scenes by the macro.
 
 
 :::{.callout-note}
@@ -176,15 +153,7 @@ Macros in `Julia` are just transformations of the syntax into other syntax. The 
 
 :::
 
-The `SymPy` package does three basic things:
-
-
-  * It imports some of the functionality provided by `SymPy`, including the ability to create symbolic variables.
-  * It overloads many `Julia` functions to work seamlessly with symbolic expressions. This makes working with polynomials quite natural.
-  * It gives access to a wide range of SymPy's functionality through the `sympy` object.
-
-
-To illustrate, using the just defined `x`, here is how we can create the polynomial $-16x^2 + 100$:
+`Symbolics` overloads many `Julia` functions to work seamlessly with symbolic expressions, which makes working with polynomials quite natural. To illustrate, using the just defined `x`, here is how we can create the polynomial $-16x^2 + 100$:
 
 
 ```{julia}
@@ -194,7 +163,7 @@ p = -16x^2 + 100
 That is, the expression is created just as you would create it within a function body. But here the result is still a symbolic object. We have assigned this expression to a variable `p`, and have not defined it as a function `p(x)`. Mentally keeping the distinction between symbolic expressions and functions is very important.
 
 
-The `typeof` function shows that `p` is of a symbolic type (`Sym`):
+The `typeof` function shows that `p` is of a symbolic type (`Num`):
 
 
 ```{julia}
@@ -233,27 +202,27 @@ f(x, m, b) = m*x + b
 ex = f(x, a, b)
 ```
 
-## Substitution: subs, replace
+## Substitution: substitute
 
 
 Algebraically working with symbolic expressions is straightforward. A different symbolic task is substitution. For example, replacing each instance of `x` in a polynomial, with, say, `(x-1)^2`. Substitution requires three things to be specified: an expression to work on, a variable to substitute, and a value to substitute in.
 
 
-SymPy provides its `subs` function for this. This function is available in `Julia`, but it is easier to use notation reminiscent of function evaluation.
+`Symbolics` provides the `substitute` function for this.
 
 
 To illustrate, to do the task above for the polynomial $-16x^2 + 100$ we could have:
 
 
 ```{julia}
-p(x => (x-1)^2)
+substitute(p, x => (x-1)^2)
 ```
 
-This "call" notation takes pairs (designated by `a=>b`) where the left-hand side is the variable to substitute for, and the right-hand side the new value. (This mirrors a similar use with `replace`.) The value to substitute can depend on the variable, as illustrated; be a different variable; or be a numeric value, such as $2$:
+After the expression comes a pair (designated by `a=>b`) where the left-hand side is the variable to substitute for, and the right-hand side the new value. (This mirrors a similar use with `replace`.) To substitute for several variables at once, pass a dictionary of such pairs, `Dict(x => 2, a => 3)`, as in the [Julia overview](julia_overview.qmd#symbolic-math). The value to substitute can depend on the variable, as illustrated; be a different variable; or be a numeric value, such as $2$:
 
 
 ```{julia}
-y = p(x=>2)
+y = substitute(p, x => 2)
 ```
 
 The result will always be of a symbolic type, even if the answer is just a number:
@@ -263,12 +232,7 @@ The result will always be of a symbolic type, even if the answer is just a numbe
 typeof(y)
 ```
 
-If there is just one free variable in an expression, the pair notation can be dropped:
-
-
-```{julia}
-p(4) # substitutes x=>4
-```
+There is no shorter way to write this. A symbolic expression is not a function, so calling it like one, `p(4)`, is an error, even when `x` is its only variable. (The error message suggests `@syms`, which is for declaring an unknown *function*, such as $f(x)$, symbolically. It does not make `p` callable.) Keeping `substitute` for expressions and `f(x)` for functions keeps the distinction between the two in plain view.
 
 ##### Example
 
@@ -277,16 +241,16 @@ Suppose we have the polynomial $p = ax^2 + bx +c$. What would it look like if we
 
 
 ```{julia}
-@syms E F
+@variables E F
 p = a*x^2 + b*x + c
-p(x => x-E) + F
+substitute(p, x => x - E) + F
 ```
 
 And expanded this becomes:
 
 
 ```{julia}
-expand(p(x => x-E) + F)
+expand(substitute(p, x => x - E) + F)
 ```
 
 ### Conversion of symbolic numbers to Julia numbers
@@ -296,33 +260,35 @@ In the above, we substituted `2` in for `x` to get `y`:
 
 
 ```{julia}
-#| hold: true
 p = -16x^2 + 100
-y = p(2)
+y = substitute(p, x => 2)
 ```
 
-The value, $36$ is still symbolic, but clearly an integer. If we are just looking at the output, we can easily translate from the symbolic value to an integer, as they print similarly. However the conversion to an integer, or another type of number, does not happen automatically.  If a number is needed to pass along to another `Julia` function, it may need to be converted. In general, conversions between different types are handled through various methods of `convert`.
-
-For real numbers, an easy to call conversion is available through the `float` method:
+The value, $36$ is still symbolic, but clearly an integer. If we are just looking at the output, we can easily translate from the symbolic value to an integer, as they print similarly. However the conversion to an integer, or another type of number, does not happen automatically. Taking a square root shows the difference: `Julia` would compute the square root of the integer $36$ as $6.0$, but the symbolic $36$ just gets a symbolic square root:
 
 ```{julia}
-float(y)
+sqrt(y)
 ```
 
-
-
-The use of the generic `float` method returns a floating point number. (The `.evalf()` method of `SymPy` objects uses `SymPy` to produce floating point versions of symbolic values.
-
-`SymPy` objects have their own internal types. To preserve these on conversion to a related `Julia` value, the `N` function from  `SymPy` is useful:
-
+If a number is needed to pass along to another `Julia` function, it needs to be converted. Beware that the generic `float` method, which converts most numbers to floating point, does *not* do it here: `float(y)` quietly returns the same symbolic $36$, as its type shows:
 
 ```{julia}
-#| hold: true
-p = -16x^2 + 100
-N(p(2))
+typeof(float(y))
 ```
 
-Where `convert(T, x)` requires a specification of the type to convert `x` to, `N` attempts to match the data type used by SymPy to store the number. As such, the output type of `N` may vary (rational, a BigFloat, a float, etc.) Conversion by `N` will fail if the value to be converted contains free symbols, as would be expected.
+The conversion is done by `Symbolics.value`, which returns the number the symbolic object holds:
+
+```{julia}
+Symbolics.value(y), sqrt(Symbolics.value(y))
+```
+
+`Symbolics.value` returns the number in the type it was stored as, so its output type varies: an integer here, but a rational number when a rational was substituted:
+
+```{julia}
+Symbolics.value(substitute(p, x => 1//2))
+```
+
+When free symbols remain, as in `substitute(a*x^2 + b, x => 2)`, there is no number to return, and `Symbolics.value` hands back the expression rather than failing. So when a number is required, check for one: `Symbolics.value(...) isa Number` is `false` in that case.
 
 
 ### Converting symbolic expressions into Julia functions
@@ -333,41 +299,42 @@ Evaluating a symbolic expression and returning a numeric value can be done by co
 
 ```{julia}
 p = 200 - 16x^2
-N(p(2))
+Symbolics.value(substitute(p, x => 2))
 ```
 
 This approach is direct, but can be slow *if* many such evaluations were needed (such as with a plot). An alternative is to turn the symbolic expression into a `Julia` function and then evaluate that as usual.
 
 
-The `lambdify` function turns a symbolic expression into a `Julia` function
+The `build_function` function turns a symbolic expression into a `Julia` function. It is given the expression and then the variable (or variables) that become the function's arguments; `expression = Val(false)` asks for a ready-to-call function rather than the `Julia` code for one:
 
 
 ```{julia}
 #| hold: true
-pp = lambdify(p)
+pp = build_function(p, x; expression = Val(false))
 pp(2)
 ```
 
-The `lambdify` function uses the name of the similar `SymPy` function which is named after Python's convention of calling anonymous function "lambdas." The use above is straightforward. Only slightly more complicated is the use when there are multiple symbolic values. For example:
+The use above is straightforward. Only slightly more complicated is the use when there are multiple symbolic values. For example:
 
 
 ```{julia}
 #| hold: true
 p = a*x^2 + b
-pp = lambdify(p)
+pp = build_function(p, a, b, x; expression = Val(false))
 pp(1,2,3)
 ```
 
-This evaluation matches `a` with `1`, `b` with`2`, and `x` with `3` as that is the order returned by the function call `free_symbols(p)`. To adjust that, a second `vars` argument can be given:
+This evaluation matches `a` with `1`, `b` with `2`, and `x` with `3`, as that is the order the variables were listed in. There is no default order to guess: the arguments are always the variables you list, in the order you list them. Listing them differently changes the function:
 
 
 ```{julia}
 #| hold: true
-pp = lambdify(p, (x,a,b))
+p = a*x^2 + b
+pp = build_function(p, x, a, b; expression = Val(false))
 pp(1,2,3) # computes 2*1^2 + 3
 ```
 
-(We suggest using the pair notation when there is more than one variable.)
+(To find which variables an expression contains, `Symbolics.get_variables(p)` lists them. For a single evaluation with more than one variable, `substitute` with a dictionary of pairs makes the matching explicit.)
 
 ## Graphical properties of polynomials
 
@@ -379,7 +346,7 @@ Consider the graph of the polynomial `x^5 - x + 1`:
 plot(x^5 - x + 1, -3/2, 3/2)
 ```
 
-(Plotting symbolic expressions with `Plots` is similar to plotting a function, in that the expression is passed in as the first argument. The expression must have only one free variable, as above, or an error will occur. This happens, as there is a `Plots` "recipe" for `SymPy` defined.)
+(Plotting symbolic expressions with `Plots` is similar to plotting a function, in that the expression is passed in as the first argument. This works because `Symbolics` defines a `Plots` "recipe" for its expressions. The expression must have only one free variable, as above. Be careful here: at the time of writing, an expression with more than one, such as `plot(a*x^2, -1, 1)`, does not stop with an error message. It crashes the `Julia` session itself (in a notebook, the kernel dies). To plot such an expression, substitute values for the other variables first: `plot(substitute(a*x^2, a => 2), -1, 1)`.)
 
 
 This graph illustrates the key features of polynomial graphs:
@@ -489,7 +456,7 @@ let
     gr()
     plot(; layout=4)
     plot!(x -> x^4,  -3,3, legend=false, xticks=false, yticks=false, subplot=1, title=L"$n = $ even, $a_n > 0$")
-    plot!(x -> x^5,  -3,3, legend=false, xticks=false, yticks=false, subplot=2, title=L"$n = $ odd, $a_m > 0$")
+    plot!(x -> x^5,  -3,3, legend=false, xticks=false, yticks=false, subplot=2, title=L"$n = $ odd, $a_n > 0$")
     plot!(x -> -x^4, -3,3, legend=false, xticks=false, yticks=false, subplot=3, title=L"$n = $ even, $a_n < 0$")
     plot!(x -> -x^5, -3,3, legend=false, xticks=false, yticks=false, subplot=4, title=L"$n = $ odd, $a_n < 0$")
 end
@@ -518,10 +485,15 @@ Now consider the related polynomial, $q$, where we multiply $p$ by $x^n$ and sub
 
 
 ```{julia}
-#| hold: true
 p = a*x^2 + b*x + c
 n = 2    # the degree of p
-expand(x^n * p(x => 1/x))
+q = expand(x^n * substitute(p, x => 1/x))
+```
+
+The term $a x^2/x^2$ is left as it is: `expand` multiplies out, but does not cancel common factors. `simplify_fractions` does:
+
+```{julia}
+simplify_fractions(q)
 ```
 
 In particular, from the reversal, the behavior of $q$ for large $x$ depends on the sign of $a_0$. As well, due to the $1/x$, the behaviour of $q$ for large $x>0$ is the same as the behaviour of $p$ for small *positive* $x$. In particular if $a_n > 0$ but $a_0 < 0$, then `p` is eventually positive and `q` is eventually negative.
@@ -530,7 +502,7 @@ In particular, from the reversal, the behavior of $q$ for large $x$ depends on t
 That is, if $p$ has $a_n > 0$ but $a_0 < 0$ then the graph of $p$ must cross the $x$ axis.
 
 
-This observation is the start of Descartes' rule of [signs](http://sepwww.stanford.edu/oldsep/stew/descartes.pdf), which counts the change of signs of the coefficients in `p` to say something about how many possible crossings there are of the $x$ axis by the graph of the polynomial $p$.
+This observation is the start of [Descartes' rule of signs](https://en.wikipedia.org/wiki/Descartes%27_rule_of_signs), which counts the change of signs of the coefficients in `p` to say something about how many possible crossings there are of the $x$ axis by the graph of the polynomial $p$. (Stewart Levin's short note ["Descartes' Rule of Signs - How hard can it be?"](https://web.archive.org/web/20250811235456/https://sepwww.stanford.edu/oldsep/stew/descartes.pdf) builds the rule from this same observation, that each power of $x$ dominates in its own region.)
 
 
 ## Factoring polynomials
@@ -557,32 +529,32 @@ $$
 (x-1) \cdot (x-2) \cdot (x-3) = x^3  - 6x^2 +11x - 6.
 $$
 
-The `SymPy` function `expand` will perform these algebraic manipulations without fuss:
+The `expand` function will perform these algebraic manipulations without fuss:
 
 
 ```{julia}
 expand((x-1)*(x-2)*(x-3))
 ```
 
-Factoring a polynomial is several weeks worth of lessons, as there is no one-size-fits-all algorithm available to teach to algebra students. There are some tricks that are taught: for example factoring differences of perfect squares, completing the square, the rational root theorem, $\dots$. But in general the solution is not automated without some more advanced techniques. The `SymPy` function `factor` will find all rational factors (terms like $(qx-p)$), but will leave terms that do not have rational factors alone. For example:
+Factoring a polynomial is several weeks worth of lessons, as there is no one-size-fits-all algorithm available to teach to algebra students. There are some tricks that are taught: for example factoring differences of perfect squares, completing the square, the rational root theorem, $\dots$. But in general the solution is not automated without some more advanced techniques. The `factored_poly` function will find all rational factors (terms like $(qx-p)$), but will leave terms that do not have rational factors alone. It is given the polynomial and its variable. For example:
 
 
 ```{julia}
-factor(x^3 - 6x^2 + 11x -6)
+factored_poly(x^3 - 6x^2 + 11x - 6, x)
 ```
 
 Or
 
 
 ```{julia}
-factor(x^5 - 5x^4 + 8x^3 - 8x^2 + 7x - 3)
+factored_poly(x^5 - 5x^4 + 8x^3 - 8x^2 + 7x - 3, x)
 ```
 
 But will not factor things that are not hard to see:
 
 
 ```{julia}
-factor(x^2 - 2)
+factored_poly(x^2 - 2, x)
 ```
 
 The factoring $(x-\sqrt{2})\cdot(x + \sqrt{2})$ is not found, as $\sqrt{2}$ is not rational.
@@ -594,7 +566,7 @@ The factoring $(x-\sqrt{2})\cdot(x + \sqrt{2})$ is not found, as $\sqrt{2}$ is n
 ### Polynomial functions and polynomials.
 
 
-Our definition of a polynomial is in terms of algebraic expressions which are easily represented by `SymPy` objects, but not objects from base `Julia`. (Later we discuss the `Polynomials` package for representing polynomials. There is also the `AbstractAlbegra` package for a more algebraic treatment of polynomials.)
+Our definition of a polynomial is in terms of algebraic expressions which are easily represented by symbolic objects, but not objects from base `Julia`. (Later we discuss the `Polynomials` package for representing polynomials. There is also the `AbstractAlgebra` package for a more algebraic treatment of polynomials.)
 
 
 However, *polynomial functions* are easily represented by `Julia`, for example,
@@ -614,15 +586,15 @@ It is easy to create a symbolic expression from a function - just evaluate the f
 f(x)
 ```
 
-This is easy---but can also be confusing. The function object is `f`, the expression is `f(x)`---the function evaluated on a symbolic object. Moreover, as seen, the symbolic expression can be evaluated using the same syntax as a function call:
+This is easy---but can also be confusing. The function object is `f`, the expression is `f(x)`---the function evaluated on a symbolic object. The two are evaluated differently: the function by calling it, `f(2)`, and the expression by substitution:
 
 
 ```{julia}
 p = f(x)
-p(2)
+substitute(p, x => 2)
 ```
 
-For many uses, the distinction is unnecessary to make, as the many functions will work with any callable expression. For `Plots` there is a recipe – either `plot(f, a, b)` or `plot(f(x), a, b)` will produce the same plot using the `Plots` package.
+For some uses, the distinction is unnecessary to make, as some functions accept either one. For `Plots` there is a recipe – either `plot(f, a, b)` or `plot(f(x), a, b)` will produce the same plot using the `Plots` package.
 
 
 ## Questions
@@ -747,7 +719,7 @@ The polynomial `p` is defined in `Julia` as follows:
 ```{julia}
 #| hold: true
 #| eval: false
-@syms x
+@variables x
 p = -16x^2 + 64
 ```
 
@@ -757,7 +729,7 @@ What command will return the value of the polynomial when $x=2$?
 ```{julia}
 #| hold: true
 #| echo: false
-choices = [q"p*2", q"p[2]", q"p_2", q"p(x=>2)"]
+choices = [q"p*2", q"p(2)", q"p[2]", q"substitute(p, x => 2)"]
 answ = 4
 radioq(choices, answ)
 ```
@@ -819,30 +791,30 @@ radioq(choices, answ, keep_order=true)
 ###### Question
 
 
-Use `SymPy` to factor the polynomial $x^{11} - x$. How many factors are found?
+Use `factored_poly` to factor the polynomial $x^{11} - x$. How many factors are found?
 
 
 ```{julia}
 #| hold: true
 #| echo: false
-@syms x
+@variables x
 ex = x^11 - x
-nf = length(factor(ex).args)
+nf = length(poly_factors(ex, x))
 numericq(nf)
 ```
 
 ###### Question
 
 
-Use `SymPy` to factor the polynomial $x^{12} - 1$. How many factors are found?
+Use `factored_poly` to factor the polynomial $x^{12} - 1$. How many factors are found?
 
 
 ```{julia}
 #| hold: true
 #| echo: false
-@syms x
+@variables x
 ex = x^12 - 1
-nf = length(factor(ex).args)
+nf = length(poly_factors(ex, x))
 numericq(nf)
 ```
 
@@ -866,14 +838,14 @@ radioq(choices, 2)
 ###### Question
 
 
-Use `expand` to expand the expression `((x-h)^3 - x^3) / h` where `x` and `h` are symbolic constants. What is the value:
+Use `simplify_fractions` to simplify the expression `((x-h)^3 - x^3) / h` where `x` and `h` are symbolic constants. What is the value:
 
 
 ```{julia}
 #| hold: true
 #| echo: false
 choices = [
-q"-h^2 + 3hx  - 3x^2",
+q"-3x^2 + 3hx - h^2",
 q"h^3 + 3h^2x + 3hx^2 + x^3 -x^3/h",
 q"x^3 - x^3/h",
 q"0"]

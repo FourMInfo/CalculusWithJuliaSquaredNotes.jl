@@ -7,15 +7,13 @@ This section uses the following add-on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using SymPy
-using Plots
+using CalculusWithJuliaSquared
 plotly()
-import Polynomials
+using Polynomials
 using RealPolynomialRoots
 ```
 
-The `Polynomials` package is "imported" to avoid naming collisions with `SymPy`;some names may need to be qualified.
+`CalculusWithJuliaSquared` brings the `Symbolics` computer algebra system and `Plots` with it. The `Polynomials` package can be loaded in full alongside them: none of the names it exports is already taken. After loading it, `variable`, `degree`, `roots`, `derivative` and `integrate` refer to its functions. (`Symbolics` has its own `variable` and `derivative`, but does not export them, so they do not clash; they are written `Symbolics.variable` and `Symbolics.derivative`.)
 
 
 
@@ -95,7 +93,7 @@ Where the function crosses $0$ is very hard to tell from these two graphs. As we
 ## Asymptotes
 
 
-Formally, an [asymptote](http://en.wikipedia.org/wiki/Asymptote) of a curve is a line such that the distance between the curve and the line approaches $0$ as they tend to infinity. Tending to infinity can happen as $x \rightarrow \pm \infty$ *or* $y \rightarrow \pm \infty$, the former being related to *horizontal asymptotes* or *slant asymptotes*, the latter being related to *vertical asymptotes*.
+Formally, an [asymptote](https://en.wikipedia.org/wiki/Asymptote) of a curve is a line such that the distance between the curve and the line approaches $0$ as they tend to infinity. Tending to infinity can happen as $x \rightarrow \pm \infty$ *or* $y \rightarrow \pm \infty$, the former being related to *horizontal asymptotes* or *slant asymptotes*, the latter being related to *vertical asymptotes*.
 
 
 ### Behaviour as $x \rightarrow \infty$ or $x \rightarrow -\infty$.
@@ -108,7 +106,7 @@ In particular, let's rewrite the expression in terms of its numerator and denomi
 
 
 ```{julia}
-@syms x::real
+@variables x   # a Symbolics variable is real by default
 num = (x-1)^2 * (x-2)
 den = (x+3) * (x-3)
 ```
@@ -137,20 +135,20 @@ This yields the decomposition of `num/den`:
 q + r/den
 ```
 
-A similar result can be found using the `apart` function, which can be easier to use if the expression is not given in terms of a separate numerator and denominator.
+A similar result can be found using the `partial_fractions` function (`SymPy` calls it `apart`), which can be easier to use if the expression is not given in terms of a separate numerator and denominator. It needs to be told which symbol is the variable:
 
 
 ```{julia}
 g(x) = (x-1)^2 * (x-2) / ((x+3)*(x-3))  # as a function
 h = g(x)                                # a symbolic expression
-apart(h)
+partial_fractions(h, x)
 ```
 
-This decomposition breaks the rational expression into two pieces: $x-4$ and $40/(3x+9) + 2/(3x-9)$. The first piece would have a graph that is the line with slope $1$ and $y$-intercept $4$. As $x$ goes to $\infty$, the second piece will clearly go towards $0,$ as this simple graph shows:
+This decomposition breaks the rational expression into two pieces: $x-4$ and $\frac{40}{3(x+3)} + \frac{2}{3(x-3)}$. The first piece would have a graph that is the line with slope $1$ and $y$-intercept $-4$. As $x$ goes to $\infty$, the second piece will clearly go towards $0,$ as this simple graph shows:
 
 
 ```{julia}
-plot(apart(h) - (x - 4), 10, 100)
+plot(partial_fractions(h, x) - (x - 4), 10, 100)
 ```
 
 Similarly, a plot over $[-100, -10]$ would show decay towards $0$, though in that case from below. Combining these two facts then, it is now no surprise that the graph of the rational function $f(x)$ should approach a straight line, in this case $y=x-4$, as $x \rightarrow \pm \infty$.
@@ -159,12 +157,14 @@ Similarly, a plot over $[-100, -10]$ would show decay towards $0$, though in tha
 We can easily do most of this analysis without needing a computer or algebra. First, we should know the four eventual shapes of a polynomial, that the graph of $y=mx$ is a line with slope $m$, the graph of $y = c$ is a constant line at height $c$, and the graph of $y=c/x^m$, $m > 0$ will decay towards $0$ as $x \rightarrow \pm\infty$. The latter should be clear, as $x^m$ gets big, so its reciprocal goes towards $0$.
 
 
-The factored form, as $h$ is presented, is a bit hard to work with, rather we use the expanded form, which we get through the `cancel` function
+The factored form, as $h$ is presented, is a bit hard to work with, rather we use the expanded form, which we get through the `expand` function. On a quotient it multiplies out the numerator and the denominator separately:
 
 
 ```{julia}
-cancel(h)
+expand(h)
 ```
+
+(`SymPy`'s `cancel` would also cancel any factor common to the top and bottom. `expand` never does; that is the job of `simplify_fractions`. Here there is no common factor, so the two agree.)
 
 We can see that the numerator is of degree $3$ and the denominator of degree $2$.  The leading terms are $x^3$ and $x^2$, respectively. If we were to pull those out we would get:
 
@@ -173,7 +173,7 @@ $$
 \frac{x^3 \cdot (1 - 4/x + 5/x^2 - 2/x^3)}{x^2 \cdot (1 - 9/x^2)}.
 $$
 
-The terms $(1 - 4/x + 5/x^2 - 2/x^3)$ and $(1 - 9/x^2)$ go towards $1$ as $x \rightarrow \pm \infty$, as each term with $x$ goes towards $0$. So the dominant terms comes from the ratio of the leading terms, $x^3$ and $x^2$. This ratio is $x$, so their will be an asymptote around a line with slope $1$. (The fact that the asymptote is $y=x-4$ takes a bit more work, as a division step is needed.)
+The terms $(1 - 4/x + 5/x^2 - 2/x^3)$ and $(1 - 9/x^2)$ go towards $1$ as $x \rightarrow \pm \infty$, as each term with $x$ goes towards $0$. So the dominant terms comes from the ratio of the leading terms, $x^3$ and $x^2$. This ratio is $x$, so there will be an asymptote around a line with slope $1$. (The fact that the asymptote is $y=x-4$ takes a bit more work, as a division step is needed.)
 
 
 Just by looking at the ratio of the two leading terms, the behaviour as $x \rightarrow \pm \infty$ can be discerned. If this ratio is of:
@@ -217,7 +217,7 @@ Then we can see that the ratio of the leading terms is $x^5 / (5x^4) = (1/5)x$. 
 ```{julia}
 #| hold: true
 p = (x^5 - 2x^4 + 3x^3 - 4x^2 + 5) / (5x^4 + 4x^3 + 3x^2 + 2x + 1)
-quo, rem = divrem(numerator(p), denominator(p))  # or apart(p)
+quo, r = divrem(numerator(p), denominator(p))  # or partial_fractions(p, x)
 quo
 ```
 
@@ -237,8 +237,10 @@ has decomposition $5x^2 + 11x + 11 + 13/(x-1)$:
 ```{julia}
 top = 5x^3 + 6x^2 +2
 bottom = x-1
-quo, rem = divrem(top, bottom)
+quo, r = divrem(top, bottom)
 ```
+
+(We name the remainder `r`, not `rem`: assigning to `rem` would hide `Julia`'s `rem` function, the integer remainder, for the rest of the session.)
 
 The graph has nothing in common with the graph of the quotient for small $x$
 
@@ -266,13 +268,13 @@ $$
 \frac{(x-2)^3\cdot(x-4)\cdot(x-3)}{(x-5)^4 \cdot (x-6)^2}.
 $$
 
-By looking at the powers we can see that the leading term of the numerator will the $x^5$ and the leading term of the denominator $x^6$. The ratio is $1/x^1$. As such, we expect the $x$-axis as a horizontal asymptote.
+By looking at the powers we can see that the leading term of the numerator will be $x^5$ and the leading term of the denominator $x^6$. The ratio is $1/x^1$. As such, we expect the $x$-axis as a horizontal asymptote.
 
 
 #### Partial fractions
 
 
-The `apart` function was useful to express a rational function in terms of a polynomial plus additional rational functions whose horizontal asymptotes are $0$.  This function computes the partial fraction [decomposition](https://en.wikipedia.org/wiki/Partial_fraction_decomposition) of a rational function. Outside of the initial polynomial, this decomposition is a reexpression of a rational function into a sum of rational functions, where the denominators are *irreducible*, or unable to be further factored (non-trivially) and the numerators have lower degree than the denominator. Hence the horizontal asymptotes of $0$.
+The `partial_fractions` function was useful to express a rational function in terms of a polynomial plus additional rational functions whose horizontal asymptotes are $0$.  This function computes the partial fraction [decomposition](https://en.wikipedia.org/wiki/Partial_fraction_decomposition) of a rational function. Outside of the initial polynomial, this decomposition is a reexpression of a rational function into a sum of rational functions, where the denominators are *irreducible*, or unable to be further factored (non-trivially) and the numerators have lower degree than the denominator. Hence the horizontal asymptotes of $0$.
 
 
 To see another example we have:
@@ -282,7 +284,7 @@ To see another example we have:
 #| hold: true
 p = (x-1)*(x-2)
 q = (x-3)^3 * (x^2 - x - 1)
-apart(p/q)
+partial_fractions(p/q, x)
 ```
 
 The denominator, $q$, has factors $x-3$ and $x^2 - x - 1$, each irreducible. The answer is expressed in terms of a sum of rational functions each with a denominator coming from one of these factors, possibly with a power.
@@ -330,7 +332,7 @@ where both $r(c)$ and $s(c)$ are non zero. Knowing $m$ and $n$ (the multipliciti
 
 
   * If $m < n$ then $x=c$ will be a vertical asymptote.
-  * If $m \geq n$ then $x=c$ will not be vertical asymptote. (The value $c$ will be known as a removable singularity). In this case, the graph of $p(x)/q(x)$ and the graph of $(x-c)^{m-n}r(x)/s(x)$ will differ, though very slightly, as the latter will include a value for $x=c$, whereas $x=c$ is not in the domain of $p(x)/q(x)$.
+  * If $m \geq n$ then $x=c$ will not be a vertical asymptote. (The value $c$ will be known as a removable singularity). In this case, the graph of $p(x)/q(x)$ and the graph of $(x-c)^{m-n}r(x)/s(x)$ will differ, though very slightly, as the latter will include a value for $x=c$, whereas $x=c$ is not in the domain of $p(x)/q(x)$.
 
 
 Finding the multiplicity may or may not be hard, but there is a very kludgy quick check that is often correct. With `Julia`, if you have a rational function that has `f(c)` evaluate to `Inf` or `-Inf` then there will be a vertical asymptote. If the expression evaluates to `NaN`, more analysis is needed. (The value of `0/0` is `NaN`, where as `1/0` is `Inf`.)
@@ -376,7 +378,7 @@ We can also clip the `y` axis. The `plot` function can be passed an argument `yl
 plot(f, -5, 5, ylims=(-20, 20))
 ```
 
-This isn't ideal, as the large values are still computed, just the viewing window is clipped. This leaves the vertical asymptotes still effecting the graph.
+This isn't ideal, as the large values are still computed, just the viewing window is clipped. This leaves the vertical asymptotes still affecting the graph.
 
 
 There is another way, we could ask `Julia` to not plot $y$ values that get too large. This is not a big request.  If instead of the value of `f(x)` - when it is large - we use `NaN` instead, then the connect-the-dots algorithm will skip those values.
@@ -386,7 +388,7 @@ This was discussed in an earlier section where the `rangeclamp` function was int
 
 
 ```{julia}
-plot(rangeclamp(f, 30), -25, 25)  # rangeclamp is in the CalculusWithJulia package
+plot(rangeclamp(f, 30), -25, 25)  # rangeclamp is in the CalculusWithJuliaSquared package
 ```
 
 We can see the general shape of $3$ curves broken up by the vertical asymptotes. The two on the side heading off towards the line $x-4$ and the one in the middle. We still can't see the precise location of the zeros, but that wouldn't be the case with most graphs that show asymptotic behaviors. However, we can clearly tell where to "zoom in" were those of interest.
@@ -410,7 +412,7 @@ The usual recipe for construction follows these steps:
   * Identify "test points" within each implied interval (these are $(-\infty, -1)$, $(-1,0)$, $(0,1)$, and $(1, \infty)$ in the example) and check for the sign of $f(x)$ at these test points. Write in `-`, `+`, `0`, or `*`, as appropriate. The value comes from the fact that "continuous" functions may only change sign when they cross $0$ or are undefined.
 
 
-With the computer, where it is convenient to draw a graph, it might be better to emphasize the sign on the graph of the function, but at times numeric values are preferred. The `sign_chart` function from `CalculusWithJulia` does this analysis by numerically identifying points where the function is $0$ or $\infty$ and indicating the sign as $x$ crosses over these points.
+With the computer, where it is convenient to draw a graph, it might be better to emphasize the sign on the graph of the function, but at times numeric values are preferred. The `sign_chart` function from `CalculusWithJuliaSquared` does this analysis by numerically identifying points where the function is $0$ or $\infty$ and indicating the sign as $x$ crosses over these points.
 
 
 ```{julia}
@@ -419,7 +421,7 @@ f(x) = x^3 - x
 sign_chart(f, -3/2, 3/2)
 ```
 
-This format is a bit different from above, but shows to the left of $-1$ a minussign; between $-1$ and $0$ a plus sign; between $0$ and $1$ a minus sign; and between $1$ and $3/2$ a plus sign.
+This format is a bit different from above, but shows to the left of $-1$ a minus sign; between $-1$ and $0$ a plus sign; between $0$ and $1$ a minus sign; and between $1$ and $3/2$ a plus sign.
 
 ## Pade approximate
 
@@ -459,14 +461,7 @@ plot!(tan_p, -pi/2 + 0.2, pi/2 - 0.2)
 ## The `Polynomials` package for rational functions
 
 
-In the following, we import some functions from the `Polynomials` package. We avoided loading the entire namespace, as there are conflicts with `SymPy`. Here we import some useful functions and the `Polynomial` constructor:
-
-
-```{julia}
-import Polynomials: Polynomial, variable, lowest_terms, fromroots, coeffs
-```
-
-The `Polynomials` package has support for rational functions. The `//` operator can be used to create rational expressions from polynomial expressions:
+The `Polynomials` package, loaded at the top of this section, has support for rational functions. The `//` operator can be used to create rational expressions from polynomial expressions. (Note that the first line below makes `x` name the `Polynomials` variable from here on, in place of the symbolic `x` used so far.)
 
 
 ```{julia}
@@ -490,7 +485,15 @@ The rational expressions are not in lowest terms unless requested through the `l
 lowest_terms(pq)
 ```
 
-For polynomials as simple as these, this computation is not a problem, but there is the very real possibility that the lowest term computation may be incorrect. Unlike `SymPy` which factors symbolically, `lowest_terms` uses a numeric algorithm and does not, as would be done by hand or with `SymPy`, factor the polynomial and then cancel common factors.
+For polynomials as simple as these, this computation is not a problem, but there is the very real possibility that the lowest term computation may be incorrect. The `lowest_terms` function uses a numeric algorithm, as the not-quite-integer coefficients above show, and does not, as would be done by hand, factor the polynomials and then cancel common factors.
+
+`Symbolics` does the exact version. A `Polynomials` polynomial can be evaluated at a symbolic variable, which turns it into a symbolic expression; `simplify_fractions` then cancels the common factor exactly:
+
+
+```{julia}
+@variables t   # a new symbol, as `x` now names the Polynomials variable
+simplify_fractions(p(t) / q(t))
+```
 
 
 The distinction between the two expressions is sometimes made; the initial expression is not defined at $x=2$; the reduced one is, so the two are not identical when viewed as functions of the variable $x$.
@@ -569,7 +572,7 @@ A different polynomial transformation is inversion, or the mapping $x^d \cdot p(
 ```{julia}
 #| hold: true
 p = Polynomial([1, 2, 3, 4, 5])
-d = Polynomials.degree(p)  # degree is in SymPy and Polynomials, indicate which
+d = degree(p)
 pp = p // one(p)
 x = variable(pp)
 q = x^d * pp(1/x)
@@ -623,7 +626,7 @@ a, b = 4, 6
 
 pq = p // one(p)
 x = variable(pq)
-d = Polynomials.degree(p)
+d = degree(p)
 numerator(lowest_terms( (x + 1)^d * pq((a*x + b)/(x + 1))))
 ```
 
@@ -647,7 +650,7 @@ p = fromroots([1,3,5])               #  (x-1)⋅(x-3)⋅(x-5) = -15 + 23*x - 9*x
 mobius_transformation(p, 2,6)
 ```
 
-This observation, along with a detailed analysis provided by [Kobel, Rouillier, and Sagraloff](https://dl.acm.org/doi/10.1145/2930889.2930937) provides a means to find intervals that enclose the real roots of a polynomial.
+This observation, along with a detailed analysis provided by [Kobel, Rouillier, and Sagraloff](https://dl.acm.org/doi/10.1145/2930889.2930937) ([open copy on arXiv](https://arxiv.org/abs/1605.00410)) provides a means to find intervals that enclose the real roots of a polynomial.
 
 
 The basic algorithm, as presented next, is fairly simple to understand, and hints at the bisection algorithm to come. It is due to Akritas and Collins. Suppose you know the only possible positive real roots are between $0$ and $M$ *and* no roots are repeated. Find the transformed polynomial over $[0,M]$:
@@ -679,7 +682,7 @@ So the three roots ($1$, $3$, $5$) are isolated by $[0, 9/4]$, $[9/4, 9/2]$, and
 ### The `RealPolynomialRoots` package.
 
 
-For square-free polynomials, the `RealPolynomialRoots` package implements a basic version of the  paper of [Kobel, Rouillier, and Sagraloff](https://dl.acm.org/doi/10.1145/2930889.2930937) to identify the real roots of a polynomial using the Descartes rule of signs and the Möbius transformations just described.
+For square-free polynomials, the `RealPolynomialRoots` package implements a basic version of the  paper of [Kobel, Rouillier, and Sagraloff](https://dl.acm.org/doi/10.1145/2930889.2930937) ([open copy on arXiv](https://arxiv.org/abs/1605.00410)) to identify the real roots of a polynomial using the Descartes rule of signs and the Möbius transformations just described.
 
 
 The `ANewDsc` function takes a collection of coefficients representing a polynomial and returns isolating intervals for each real root. For example:
@@ -719,7 +722,35 @@ and
 refine_roots(st)
 ```
 
-The SymPy package (`sympy.real_roots`) can accurately identify the three roots but it can take a **very** long time. The `Polynomials.roots` function from the `Polynomials` package identifies the cluster as complex valued. Though the implementation in `RealPolynomialRoots` doesn't handle such large polynomials, the authors of the algorithm have implementations that can quickly solve polynomials with degrees as high as $10,000$.
+The `roots` function from the `Polynomials` package, which works in floating point, gets the cluster wrong: it reports the two clustered roots as a pair of complex numbers.
+
+
+```{julia}
+filter(z -> abs(z) < 0.1, roots(u))   # the roots near 0.0079
+```
+
+The `root_enclosures` function from `CalculusWithJuliaSquared` settles the question. It works from the exact polynomial, so we first evaluate `u` at the symbol `t`, which gives the same polynomial as a symbolic expression. Each real root comes back inside an interval that is guaranteed to contain it, printed as `[midpoint +/- radius]`:
+
+
+```{julia}
+es = root_enclosures(u(t), t)
+```
+
+Two intervals that do not overlap can only hold two different roots, so this shows there are three distinct real roots. The two in the cluster differ by only about $2.6 \cdot 10^{-18}$:
+
+
+```{julia}
+Nemo.overlaps(es[1], es[2])
+```
+
+(`Nemo`, which does the exact computation, comes with `CalculusWithJuliaSquared` but must be written out in front of its functions.) For plain floating-point values, `numeric_roots` with `real_only = true` also returns three real roots, but the two clustered ones differ only in the last digit. Floating-point numbers alone cannot prove that these are two roots rather than one root computed twice:
+
+
+```{julia}
+numeric_roots(u(t), t; real_only = true)
+```
+
+Though the implementation in `RealPolynomialRoots` doesn't handle such large polynomials, the authors of the algorithm have implementations that can quickly solve polynomials with degrees as high as $10,000$.
 
 
 ## Questions

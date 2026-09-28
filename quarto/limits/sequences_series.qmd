@@ -204,11 +204,11 @@ Symbolics.simplify_fractions(r * Symbolics.derivative(geo, r) - proposed)
 That does *not* look like zero — but read the numerator. It is
 
 $$
--r^{1+n}\cdot r \;-\; n\,r^{1+n}\cdot r \;+\; r^{n}\cdot r^{2} \;+\; n\,r^{n}\cdot r^{2},
+n\,r^{2}\,r^{n} \;-\; n\,r\,r^{n+1} \;+\; r^{2}\,r^{n} \;-\; r\,r^{n+1},
 $$
 
-and $r^{1+n}\cdot r$ and $r^{n}\cdot r^{2}$ are both $r^{n+2}$, so the first term cancels
-the third and the second cancels the fourth. The expression *is* zero. `Symbolics` will not
+and $r^{2}\,r^{n}$ and $r\,r^{n+1}$ are both $r^{n+2}$, so the first two terms cancel each
+other, and so do the last two. The expression *is* zero. `Symbolics` will not
 see it, because combining those two requires adding exponents when one of them is symbolic,
 and it does not do that.
 

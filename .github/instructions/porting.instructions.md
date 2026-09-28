@@ -16,6 +16,50 @@ Triage each chapter's SymPy usage into four classes:
 
 Anchor: expand `alternatives/symbolics.qmd` into the canonical symbolic-math reference other chapters link to, instead of duplicating setup boilerplate per chapter.
 
+### CWJS work comes before chapter work — and is scoped from every chapter it will serve
+
+Aron, 2026-09-16: **(1) do the CWJS work before the CWJSN work, so no chapter is written twice;
+(2) for that reason, before any CWJS round, review the chapters of the *next* chapter PR as well
+as the current one.** A release scoped from one PR's chapters is followed by another release,
+another re-pin of every consumer and another full re-render when the next PR starts.
+
+The review is cell by cell with the prose alongside, and it inventories **what the reader
+sees**, not only what computes (next section). v0.14.0's scope nearly missed `divrem` because
+only a capability map had been consulted; v0.15.0's missed tuples and vectors because only
+computation had been.
+
+### Inventory what the reader SEES, not only what computes
+
+A cell that computes the right thing can still show the reader Julia syntax instead of
+mathematics. **What reaches the page is decided by the value's type**, and the rule, measured
+2026-09-16 in QuartoNotebookRunner's worker (`render.jl`, `render_mimetypes`), is: on an HTML
+page **`text/html` wins, but `text/latex` does not beat `text/plain`.** So only types that CWJS
+gives a `text/html` method typeset. As of CWJS 0.16.0 (measured 2026-09-23) those are:
+
+- a scalar `Num`, and a single unwrapped `BasicSymbolic` (an element of a `symbolic_solve`
+  result, or anything computed from one);
+- a `Vector{Num}` (a column: `poly_factors`, `exact_trig_values.(…)`) and a `Matrix{Num}`
+  (a grid: `jacobian`, `hessian`);
+- a `Tuple` holding a symbolic value in any of its first 16 positions (`divrem`, `substitute`
+  pairs, `a, b` at the end of a cell), with a `Symbol`, `Bool` or `String` element in code font;
+- whatever `symlim` returns, whatever the value (a number, `Inf`, `nothing`), and a vector of
+  such results.
+
+Still plain text: a tuple with nothing symbolic in it (`(1, 2)` — deliberately, so plot
+options and counts keep Julia's display), a bare array variable (`zs` after
+`@variables zs[1:3]`, a `Symbolics.Arr`), and an array of three or more dimensions.
+
+**The echo of `@variables` now typesets too** — `@variables x a b c` returns a `Vector{Num}`,
+so a cell that ends with it shows a column of the variables. End such a cell with `;` (Quarto
+hides the output of a cell whose last line ends in `;`), unless the prose wants the column.
+The mechanism and its gotchas are in the `symbolics-typesetting` skill.
+
+Run each port candidate through `_research/scripts/quarto_view.jl` (local), which prints the
+view a page will give, and include **the bare calls the prose or a quiz tells the reader to
+make** ("Use `poly_factors` to…") — those are output a reader sees too, just not on the page.
+Whether a type is typeset can change between CWJS releases (see the 2026-09-16 review in
+`_research/CHAPTER_MAP.md`); the script, not this list, is the authority.
+
 ## Choosing What to Show: Symbolic, Intermediate, or Numeric
 
 **Understanding is the primary objective — it outranks line-for-line fidelity to upstream.** Where SymPy's symbolic result has no Symbolics equivalent (classes **L** and **I** especially), do *not* reflexively drop to a final number. Decide deliberately, at each site, which form teaches best:
@@ -72,7 +116,8 @@ it** — display the free-parameter result alongside the pinned one. An answer t
 for a branch the reader did not intend is more dangerous than a refusal.
 
 See the `sciml-coding-conventions` skill's **STOP RULE** for the mechanical trigger and the
-catalogue of rewrites to try before concluding that no route exists.
+catalogue of rewrites to try before concluding that no route exists. The measured map of which
+engine takes which limit — Gruntz, Taylor, interval bounding — is in `symbolic-limits-julia`.
 
 ### Where prose asserts what a route can show, show it
 
@@ -138,6 +183,7 @@ Rendered output lands in `_book/` (gitignored), not beside the `.qmd`.
 
 - `using CalculusWithJulia` → `using CalculusWithJuliaSquared` flipped; no `SymPy` references remain in the chapter
 - `quarto render` of the chapter succeeds (code executes at build — this is the test)
+- **No symbolic output shows as plain Julia syntax**: `_research/scripts/untypeset_scan.jl <group>/<chapter>` reports no hit beyond the known-harmless ones in its header (see "Inventory what the reader SEES")
 - `typos` clean
 - Math output verified against the upstream published page for the same chapter (results should match, not just run). Where the port *deliberately* diverges (classes **L**/**I** — see "Choosing What to Show"), identical output is not the standard: verify the mathematics independently and make the divergence explicit in the prose.
 - **Every external link in the chapter resolves.** These notes are years old and their
@@ -170,7 +216,12 @@ and executing them would drag Python into a fork whose purpose is removing it.
 **To publish a newly ported chapter — one commit, three parts:**
 
 1. **Render it locally.** That writes `quarto/_freeze/<group>/<chapter>/execute-results/html.json`,
-   which is the executed output CI will assemble.
+   which is the executed output CI will assemble. **Only for a chapter listed in `_quarto.yml`:**
+   a chapter still in the commented archive renders *standalone* — no freeze, and a stray
+   `<chapter>.html` beside the `.qmd`. To render one before promoting it (to check a port),
+   add its line temporarily, render, and restore the file; delete any stray HTML.
+   (`untypeset_scan.jl` now fails on a named chapter with no freeze; it used to report
+   "0 hits" for a chapter it never read.)
 2. **Promote it in `quarto/_quarto.yml`** — move its line out of the commented "NOT YET PORTED"
    archive into the published list above it.
 3. **Commit the `_freeze/` file *and* `_quarto.yml` together**, then push to `main`.
@@ -213,6 +264,52 @@ Then diff the rendered `(value, :route)` pairs against the previous render and c
 change is one the release actually predicts. A route or value that moves *unexpectedly* is
 the signal to stop, not something to commit past.
 
+### Render the book against a CWJS branch while its PR is open
+
+**When:** any CWJS change a published page could show — `show`, `conventional_latex`, a limit
+route, a value. Default to yes; skip only for a change that provably cannot reach a page (tests,
+CI configuration). The *when* is also stated on the CWJS side, in its
+`.github/copilot-instructions.md` → "Versioning & Releases", which points here for the *how*.
+
+**Order: open the CWJS PR → replay the book while the PR is reviewed → push any fix to the PR →
+merge on the go-ahead.** Aron, 2026-09-15: the PR goes up first so the ~20-minute renders are
+review time, and what the replay finds lands as a small follow-up push. A problem found this
+way is fixed inside the PR, not by a patch release plus another re-pin of every consumer.
+
+**Full, not scoped.** Re-render every published chapter, not only the cells you reason the
+change can reach — that reasoning is the belief the replay tests. v0.14.0's pre-merge replay
+was scoped and sound for an additive release; v0.15.0 changed how every symbolic cell
+displays, and its full replay found two defects the package's 700-assertion suite did not (a
+derivative notation that read as the derivative of a product, and array elements sorted
+without their index) plus a paragraph that no longer matched its cell.
+
+**How** (measured 2026-09-15; the scripts are local, in `_research/scripts/`):
+
+1. **Point each chapter environment at the branch.** For every environment the consumer search
+   finds (commands in CWJS "Versioning & Releases" — never a remembered list), raise `[compat]`
+   to the branch's version and set `[sources]` to `{path = "<CWJS checkout>"}`.
+   `Pkg.develop(path = ...)` refuses while `[sources]` names the URL (*"`path` and `url` are
+   conflicting specifications"*), so edit the line, then `Pkg.resolve()` and read the version
+   back from `Pkg.dependencies()`.
+2. **`Pkg.precompile()` each environment**, so no render starts cold (see "A cold render can
+   freeze precompilation into a page", below).
+3. `_research/scripts/render_chapters.sh --fresh --stop-engine`
+4. `julia --project=_research/scripts _research/scripts/freeze_diff.jl` — and **read the prose
+   around every changed cell**: a paragraph that quotes an output, or says "the first term
+   cancels the third", can be falsified by a display change with no error anywhere. A rendering
+   that comes out worse is fixed in the package, not the chapter.
+5. **Then scan the whole result, not only what changed:**
+   `julia --project=_research/scripts _research/scripts/untypeset_scan.jl`. A diff reports only
+   differences, so output that was plain text before the change *and* after it is invisible to
+   step 4. That is how an untypeset `Vector{Num}` on `trig_functions` and symbolic tuples on four
+   more pages survived v0.15.0's full replay (found 2026-09-16).
+6. **After a fix is pushed, re-render the affected chapters with `--fresh` again.** A chapter
+   whose `.qmd` did not change reuses its freeze, so without `--fresh` it silently shows the
+   pre-fix output.
+7. **Restore:** `git checkout -- quarto/*/Project.toml quarto/_freeze` and re-resolve each
+   environment. Nothing from the replay is committed; after the merge and re-pin, the real
+   re-render rides in the chapter PR against the released version.
+
 ## Render discipline (Quarto can hang — guarantee liveness)
 
 - **One chapter at a time**: `quarto render <chapter>.qmd`, never the whole book to check a port. Each `.qmd` → its own `.html`; a hang in one render can't touch other chapters' already-built outputs.
@@ -221,6 +318,23 @@ the signal to stop, not something to commit past.
 - **Only the *first* render in a session is slow — iterating is cheap.** The cold render loads the group's whole env (CWJS + Plots + ~25 deps) *and* executes every cell — that's the ~15 min the timeout is sized for. Re-rendering after editing a few cells is **< 1 min**: `_freeze` supplies the untouched cells and QuartoNotebookRunner keeps a warm worker (packages stay loaded), so only the changed cells re-run. (Observed 2026-08-16: a cold render logged `Running [1/93]…[93/93]`; the next, after a 5-cell edit, logged *zero* `Running` lines yet still emitted the updated outputs.) So don't contort the workflow to dodge "a second render" — only the first one is expensive.
 - **Correctness ≠ display**: the port check is (a) all cells execute error-free and (b) output matches upstream — both in the *execution* stage. The stage that hangs is usually HTML/plotly *embedding*, a display concern; a hung embed is not proof the port is wrong. Isolate heavy figures (usually plotly) separately.
 - Per-cell `execute: timeout:` is a possible backstop but UNVERIFIED for the native Julia engine (QuartoNotebookRunner) — the external wall-clock timeout is the reliable mechanism.
+- **Local tools, in `_research/scripts/`** (gitignored — the port runs on one machine, beside
+  its plan; each script's header gives usage and one-time setup):
+  `render_chapters.sh [--fresh] [--stop-engine] [chapter...]` renders one chapter at a time
+  under a timeout (no arguments = every published chapter, parsed from `_quarto.yml`);
+  `freeze_diff.jl [--rev REV] [--full] [chapter...]` diffs freezes against a git revision cell
+  by cell; `freeze_cell.jl <group/chapter> <snippet> [--rev REV]` prints one executed cell;
+  `untypeset_scan.jl [chapter...]` lists plain-text outputs that look symbolic;
+  `quarto_view.jl` (included from a probe script) prints what a page will show for a value.
+- **A cold render can freeze precompilation into a page.** On a cold start the first cell's
+  output can capture *"Precompiling packages… QuartoNotebookWorkerPlotsExt"*, and that text
+  ships on the live page (hit `basics/calculator`, 2026-09-14). `Pkg.precompile()` the group
+  environment first; `freeze_diff.jl` warns on it; if it happens, re-render that chapter warm.
+- **Every render re-randomises some output**, so a raw freeze diff is never empty: quiz choice
+  order (the correct index moves with it), QuizQuestions widget ids, Plots.jl plotly div ids,
+  unseeded `rand()` values, BigFloat digits past the ~65th figure. `freeze_diff.jl` normalises
+  only differences observed to be meaningless, each documented in its header; add a rule only
+  for an observed case, and test that a real change is still reported.
 - **Check the output in a browser, served over HTTP** — `julia --project=@liveserver -e 'using LiveServer; serve(dir="quarto/_book", port=8001)'` from the repo root (the shared `@liveserver` environment; see the `documenter-jl-conventions` skill), or `quarto preview`. Never `python3 -m http.server`: this fork exists to remove Python, and Aron does not use it. Grepping the HTML proves a cell *executed*; it does not prove the page *displays*. Interactive figures depend on JavaScript that only runs in a real browser.
 
 ### A render can silently use the WRONG package version

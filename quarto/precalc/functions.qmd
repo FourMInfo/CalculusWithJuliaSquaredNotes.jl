@@ -767,12 +767,14 @@ Multiple dispatch is very common in mathematics. For example, we learn different
 
 :::
 
-`Julia` is similarly structured.  `Julia` terminology would be to call the operation "`+`" a *generic function* and the different implementations *methods* of "`+`". This allows the user to just need to know a smaller collection of generic concepts yet still have the power of detail-specific implementations.  To see how many different methods are defined in the base `Julia` language for the `+` operator, we can use the command `methods(+)`. As there are so many (well over $100$ when `Julia` is started), we illustrate how many different logarithm methods are implemented for "numbers:"
+`Julia` is similarly structured.  `Julia` terminology would be to call the operation "`+`" a *generic function* and the different implementations *methods* of "`+`". This allows the user to just need to know a smaller collection of generic concepts yet still have the power of detail-specific implementations.  To see how many different methods are defined in the base `Julia` language for the `+` operator, we can use the command `methods(+)`. As there are so many (well over $100$ when `Julia` is started), we illustrate how many different logarithm methods base `Julia` implements for "numbers." The final argument, a list of modules, restricts the listing to base `Julia`'s own definitions:
 
 
 ```{julia}
-methods(log, (Number,))
+methods(log, (Number,), [Base, Base.Math, Base.MPFR, Base.MathConstants])
 ```
+
+Packages add methods of their own. With `CalculusWithJuliaSquared` loaded, `Symbolics`, `IntervalArithmetic` and `ForwardDiff` each extend `log` to their own kinds of number---symbolic expressions, intervals and dual numbers---which is multiple dispatch at work: the same generic function, with a new method for each new type.
 
 (The arguments have *type annotations* such as `x::Float64` or `x::BigFloat`. `Julia` uses these to help resolve which method should be called for a given set of arguments. This allows for different operations depending on the variable type. For example, in this case, the `log` function for `Float64` values uses a fast algorithm, whereas for `BigFloat` values an algorithm that can handle multiple precision is used.)
 

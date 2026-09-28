@@ -20,49 +20,6 @@ needs a `using` of its own.
 #| results: "hidden"
 using DataFrames
 using Latexify
-
-raw"""
-    conventional_latex(s::AbstractString) -> String
-
-Rewrite `Latexify`'s rendering of `Symbolics` values into the form a mathematics text
-uses.
-
-`Symbolics` keeps a quotient as a division term only while its rational coefficient is
-exactly `1`; any other coefficient is folded into a product, and `Latexify` then writes
-that product as a fraction *times* a symbol. So `π/6` renders conventionally while
-`2π/3` becomes `\frac{2}{3} ~ \pi`, and `-√2/2` becomes ` - \frac{1}{2} ~ \sqrt{2}`.
-The sign is incidental: `2√2/3` is positive and comes out the same way. Negation only
-matters because it turns a coefficient of `1` into `-1`, which is no longer `1`.
-
-The leading space in the negative case is not merely ugly: Pandoc will not open inline
-math on `$ `, so such a cell renders as a literal dollar sign followed by raw LaTeX
-rather than as mathematics.
-
-Four rewrites, applied to the LaTeX text:
-
-  \frac{a}{b} ~ Z   ->  \frac{a Z}{b}   (dropping a redundant coefficient of 1)
-  \frac{-a}{b}      ->  -\frac{a}{b}
-  " - \frac"        ->  "-\frac"
-  bare π             ->  \pi
-
-**If this is needed in another chapter, lift this function into
-`CalculusWithJuliaSquared` and rewrite this table to use it from there.** It is kept
-local for now because this is its only caller, and moving it would cost a release and a
-re-pin of every published group.
-"""
-function conventional_latex(s::AbstractString)
-    s = replace(s, r"\\frac\{(-?\d+)\}\{(\d+)\} ~ (\\pi|\\sqrt\{\d+\})" =>
-        m -> begin
-            c = match(r"\\frac\{(-?\d+)\}\{(\d+)\} ~ (.+)"s, m)
-            a, b, z = c.captures
-            a == "1"  ? "\\frac{$z}{$b}"  :
-            a == "-1" ? "-\\frac{$z}{$b}" : "\\frac{$a $z}{$b}"
-        end)
-    s = replace(s, r"\\frac\{-(\d+)\}\{(\d+)\}" => s"-\\frac{\1}{\2}")
-    s = replace(s, " - \\frac" => "-\\frac")
-    replace(s, "π" => "\\pi")
-end
-
 nothing
 ```
 
@@ -741,11 +698,12 @@ In this next plot, the angle values are chosen to be the familiar ones, so the m
 #| echo: false
 PI = Symbolics.Num(pi)
 θs = [0, PI/6, PI/4, PI/3, PI/2, 2PI/3, 3PI/4, 5PI/6, PI]
-tbl = latexify(DataFrame(θ = θs,
-                         x = exact_trig_values.(cos.(θs)),
-                         y = exact_trig_values.(sin.(θs))))
-
-Markdown.parse(conventional_latex(sprint(print, tbl)))
+# `conventional_latex` typesets one value at a time: `2π/3` rather than `\frac{2}{3} ~ \pi`,
+# and no leading space before a minus sign, which would stop Pandoc from opening the math.
+typeset(v) = LaTeXString(conventional_latex(v))
+latexify(DataFrame(θ = typeset.(θs),
+                   x = typeset.(exact_trig_values.(cos.(θs))),
+                   y = typeset.(exact_trig_values.(sin.(θs)))))
 ```
 
 ```{julia}
