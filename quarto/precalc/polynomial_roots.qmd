@@ -7,25 +7,16 @@ In this section we use the following add on packages:
 
 
 ```{julia}
-using CalculusWithJulia
-using Plots
+using CalculusWithJuliaSquared
 plotly()
-using SymPy
 ```
 
-```{julia}
-#| echo: false
-#| results: "hidden"
-using Roots
-import LinearAlgebra: norm
-
-nothing
-```
+`CalculusWithJuliaSquared` brings the `Symbolics` computer algebra system, `Plots` and `Roots` with it.
 
 ---
 
 
-The [roots](http://en.wikipedia.org/wiki/Properties_of_polynomial_roots) of a polynomial are the values of $x$ that when substituted into the expression yield $0$. For example, the polynomial $x^2 - x$ has two roots, $0$ and $1$. A simple graph verifies this:
+The [roots](https://en.wikipedia.org/wiki/Properties_of_polynomial_roots) of a polynomial are the values of $x$ that when substituted into the expression yield $0$. For example, the polynomial $x^2 - x$ has two roots, $0$ and $1$. A simple graph verifies this:
 
 
 ```{julia}
@@ -55,7 +46,7 @@ We look at such questions here.
 We begin with a comment that ties together two concepts related to polynomials. It allows us to speak of roots or factors interchangeably:
 
 
-> The [factor theorem](http://en.wikipedia.org/wiki/Factor_theorem) relates the *roots* of a polynomial with its *factors*: $r$ is a root of $p$ if *and* only if $(x-r)$ is a factor of the polynomial $p$.
+> The [factor theorem](https://en.wikipedia.org/wiki/Factor_theorem) relates the *roots* of a polynomial with its *factors*: $r$ is a root of $p$ if *and* only if $(x-r)$ is a factor of the polynomial $p$.
 
 
 
@@ -65,14 +56,14 @@ Clearly, if $p$ is factored as $a(x-r_1) \cdot (x-r_2) \cdots (x - r_k)$ then ea
 ### Polynomial Division
 
 
-[Euclidean division](http://en.wikipedia.org/wiki/Euclidean_division) of integers $a, b$ uniquely writes $a = b\cdot q + r$ where $0 \leq r < |b|$. The quotient is $q$ and the remainder $r$. There is an analogy for polynomial division, where for two polynomial functions $f(x)$ and $g(x)$ it is possible to write
+[Euclidean division](https://en.wikipedia.org/wiki/Euclidean_division) of integers $a, b$ uniquely writes $a = b\cdot q + r$ where $0 \leq r < |b|$. The quotient is $q$ and the remainder $r$. There is an analogy for polynomial division, where for two polynomial functions $f(x)$ and $g(x)$ it is possible to write
 
 
 $$
 f(x) = g(x) \cdot q(x) + r(x)
 $$
 
-where the degree of $r$ is less than the degree of $g(x)$. The [long-division algorithm](http://en.wikipedia.org/wiki/Long_division) can be used to find both $q(x)$ and $r(x)$.
+where the degree of $r$ is less than the degree of $g(x)$. The [long-division algorithm](https://en.wikipedia.org/wiki/Long_division) can be used to find both $q(x)$ and $r(x)$.
 
 
 For the special case of a linear factor where $g(x) = x - c$,  the remainder must be of degree $0$ (a non-zero constant) or the $0$ polynomial. The above simplifies to
@@ -88,7 +79,7 @@ From this, we see that $f(c) = r$. Hence, when $c$ is a root of $f(x)$, then it 
 ---
 
 
-The division algorithm for the case of linear term, $(x-c)$, can be carried out by the [synthetic division](http://en.wikipedia.org/wiki/Synthetic_division) algorithm. This algorithm produces  $q(x)$ and $r$, a.k.a $f(c)$.  The Wikipedia page describes the algorithm well.
+The division algorithm for the case of linear term, $(x-c)$, can be carried out by the [synthetic division](https://en.wikipedia.org/wiki/Synthetic_division) algorithm. This algorithm produces  $q(x)$ and $r$, a.k.a $f(c)$.  The Wikipedia page describes the algorithm well.
 
 
 The following is an example where $f(x) = x^4 + 2x^2 + 5$ and $g(x) = x-2$:
@@ -101,7 +92,7 @@ The following is an example where $f(x) = x^4 + 2x^2 + 5$ and $g(x) = x-2$:
     1 2 6 12 29
 ```
 
-The polynomial $f(x)$ is coded in terms of its coefficients ($a_n$, $a_{n-1}$, $\dots$, $a_1$, $a_0$) and is written on the top row. The algorithm then proceeds from left to right. The number just produced on the bottom row is multiplied by $c$ and placed under the coefficient of $f(x)$. Then values are then added to produce the next number. The sequence produced above is `1 2 6 12 29`. The last value (`29`) is $r=f(c)$, the others encode the coefficients of `q(x)`, which for this problem is $q(x)=x^3 + 2x^2 + 6x + 12$.  That is, we have written:
+The polynomial $f(x)$ is coded in terms of its coefficients ($a_n$, $a_{n-1}$, $\dots$, $a_1$, $a_0$) and is written on the top row. The algorithm then proceeds from left to right. The number just produced on the bottom row is multiplied by $c$ and placed under the coefficient of $f(x)$. The values are then added to produce the next number. The sequence produced above is `1 2 6 12 29`. The last value (`29`) is $r=f(c)$, the others encode the coefficients of `q(x)`, which for this problem is $q(x)=x^3 + 2x^2 + 6x + 12$.  That is, we have written:
 
 
 $$
@@ -125,7 +116,7 @@ $$
 a_0 + c\cdot(a_1 + c\cdot(a_2 + c\cdot(a_3 + c\cdot a_4))),
 $$
 
-The above pattern provides a means to compute $f(c)$ and could easily be generalized for higher degree polynomials.  This generalization is called [Horner's](http://en.wikipedia.org/wiki/Horner%27s_method) method. Horner's method has the advantage of also being faster and more accurate when floating point issues are accounted for.
+The above pattern provides a means to compute $f(c)$ and could easily be generalized for higher degree polynomials.  This generalization is called [Horner's](https://en.wikipedia.org/wiki/Horner%27s_method) method. Horner's method has the advantage of also being faster and more accurate when floating point issues are accounted for.
 
 
 A simple implementation of Horner's algorithm would look like this, if indexing were `0`-based:
@@ -149,7 +140,7 @@ Recording the different values of `Σ` would recover the polynomial `q`.
 
 
 ```{julia}
-@syms x::real       # assumes x is real
+@variables x;
 ```
 
 ```{julia}
@@ -161,7 +152,7 @@ evalpoly(x, p)
 ---
 
 
-The `SymPy` package can carry out polynomial long division.
+`Symbolics` can carry out polynomial long division.
 
 
 This naive attempt to divide won't "just work" though:
@@ -171,7 +162,7 @@ This naive attempt to divide won't "just work" though:
 (x^4 + 2x^2 + 5) / (x-2)
 ```
 
-`SymPy` is fairly conservative in how it simplifies answers, and, as written, there is no compelling reason to change the expressions, though in our example we want it done.
+Dividing with `/` builds a fraction and leaves it as it is. As written, there is no compelling reason to change the expression, though in our example we want the division done.
 
 
 For this task, `divrem` is available:
@@ -181,29 +172,45 @@ For this task, `divrem` is available:
 quotient, remainder = divrem(x^4 + 2x^2 + 5, x - 2)
 ```
 
-The answer is a tuple containing the quotient and remainder. The quotient itself could be found with `div` or `÷` and the remainder with `rem`.
-
-
-:::{.callout-note}
-## Note
-For those who have worked with SymPy within Python, `divrem` is the `div` method renamed, as `Julia`'s `div` method has the generic meaning of returning the quotient.
-
-:::
-
-As well, the `apart` function could  be used for this task. This function computes the [partial fraction](http://en.wikipedia.org/wiki/Partial_fraction_decomposition)  decomposition of a ratio of polynomial functions.
+The answer is a tuple containing the quotient and remainder. The quotient alone can be found with `div` or `÷`, and the remainder alone with `poly_rem`:
 
 
 ```{julia}
-apart((x^4 + 2x^2 + 5) / (x-2))
+(x^4 + 2x^2 + 5) ÷ (x - 2), poly_rem(x^4 + 2x^2 + 5, x - 2)
 ```
 
-The function `together` would combine such terms, as an "inverse" to `apart`. This isn't so much of interest at the moment, but will be when techniques of integration are looked at.
+:::{.callout-note}
+## Why not `rem`?
+`Julia`'s generic function for a remainder is `rem`, but it will not do here. `Symbolics` already defines `rem` for symbolic expressions, and what it returns is not a polynomial remainder but the call itself, unevaluated:
+
+```{julia}
+rem(x^4 + 2x^2 + 5, x - 2)
+```
+
+That is why the remainder of a polynomial division has a name of its own, `poly_rem`.
+:::
+
+As well, the `partial_fractions` function could be used for this task (`SymPy` calls it `apart`). This function computes the [partial fraction](https://en.wikipedia.org/wiki/Partial_fraction_decomposition) decomposition of a ratio of polynomial functions. It needs to be told which symbol is the variable:
+
+
+```{julia}
+pf = partial_fractions((x^4 + 2x^2 + 5) / (x-2), x)
+```
+
+The function `combine_fractions` combines such terms over a common denominator, as an "inverse" to `partial_fractions` (`SymPy` calls it `together`):
+
+
+```{julia}
+combine_fractions(pf)
+```
+
+This isn't so much of interest at the moment, but will be when techniques of integration are looked at.
 
 
 ### The rational root theorem
 
 
-Factoring polynomials to find roots is a task that most all readers here will recognize, and, perhaps, remember not so fondly. One helpful trick to find possible roots *by hand* is the [rational root theorem](http://en.wikipedia.org/wiki/Rational_root_theorem): if a polynomial has integer coefficients with $a_0 \neq 0$, then any rational root, $p/q$, must have $p$ dividing the constant $a_0$ and $q$ dividing the leading term $a_n$.
+Factoring polynomials to find roots is a task that most all readers here will recognize, and, perhaps, remember not so fondly. One helpful trick to find possible roots *by hand* is the [rational root theorem](https://en.wikipedia.org/wiki/Rational_root_theorem): if a polynomial has integer coefficients with $a_0 \neq 0$, then any rational root, $p/q$, must have $p$ dividing the constant $a_0$ and $q$ dividing the leading term $a_n$.
 
 
 To glimpse why, suppose we have a polynomial with a rational root and integer coefficients. With this in mind, a polynomial with identical roots may be written as $(qx -p)(a_{n-1}x^{n-1}+\cdots a_1 x + a_0)$, where each coefficient is an integer. Multiplying through, we get that the polynomial is $qa_{n-1}x^n + \cdots + pa_0$. So $q$ is a factor of the leading coefficient and $p$ is a factor of the constant.
@@ -218,22 +225,28 @@ This gives a finite - though possibly large - set of values that can be checked 
 However, one of the great triumphs of computer algebra is the ability to factor polynomials with integer (or rational) coefficients over the rational numbers. This is typically done by first factoring over modular numbers (akin to those on a clock face) and has nothing to do with the rational root test.
 
 
-`SymPy` can quickly find such a factorization, even for quite large polynomials with rational or integer coefficients.
+`factored_poly` can quickly find such a factorization, even for quite large polynomials with rational or integer coefficients. (It hands the work to the `Nemo` computer algebra library, which `CalculusWithJuliaSquared` loads.)
 
 
-For example, factoring $p = 2x^4 + x^3 -19x^2 -9x +9$. This has *possible* rational roots of plus or minus $1$ or $2$ divided by $1$, $3$, or $9$ - $12$ possible answers for this modest question. By hand that can be a bit of work, but `factor` does it without fuss:
+For example, factoring $p = 2x^4 + x^3 -19x^2 -9x +9$. This has *possible* rational roots of plus or minus $1$ or $2$ divided by $1$, $3$, or $9$ - $12$ possible answers for this modest question. By hand that can be a bit of work, but `factored_poly` does it without fuss. Like `partial_fractions`, it is told which symbol is the variable:
 
 
 ```{julia}
-#| hold: true
 p = 2x^4 + x^3 - 19x^2 - 9x + 9
-factor(p)
+factored_poly(p, x)
+```
+
+To work with the factors themselves, `poly_factors` returns them as a list:
+
+
+```{julia}
+poly_factors(p, x)
 ```
 
 ### The fundamental theorem of algebra
 
 
-There is a basic fact about the roots of a polynomial of degree $n$. Before formally stating it, we consider the earlier observation that a polynomial of degree $n$ for large values of $x$ has a graph that looks like the leading term. However, except at $0$, monomials do not cross the $x$ axis, the roots must be the result of the interaction of lower order terms. Intuitively, since each term can contribute only one basic shape up or down, there can not be arbitrarily many roots. In fact, a consequence of the [Fundamental Theorem of Algebra](http://en.wikipedia.org/wiki/Fundamental_theorem_of_algebra) (Gauss) is:
+There is a basic fact about the roots of a polynomial of degree $n$. Before formally stating it, we consider the earlier observation that a polynomial of degree $n$ for large values of $x$ has a graph that looks like the leading term. However, except at $0$, monomials do not cross the $x$ axis, the roots must be the result of the interaction of lower order terms. Intuitively, since each term can contribute only one basic shape up or down, there can not be arbitrarily many roots. In fact, a consequence of the [Fundamental Theorem of Algebra](https://en.wikipedia.org/wiki/Fundamental_theorem_of_algebra) (Gauss) is:
 
 
 > A polynomial of degree $n$ with real or complex coefficients has at most $n$ real roots.
@@ -258,7 +271,7 @@ The special case of the $0$ polynomial having no degree defined eliminates needi
 Knowing that a certain number of roots exist and actually finding those roots are different matters. For the simplest cases (the linear case) with $a_0 + a_1x$, we know by solving algebraically that the root is $-a_0/a_1$. (We assume $a_1\neq 0$.) Of course, when $a_1 \neq 0$, the graph of the polynomial will be a line with some non-zero slope, so will cross the $x$-axis as the line and this axis are not parallel.
 
 
-For the quadratic case, there is the famous [quadratic formula](http://en.wikipedia.org/wiki/Quadratic_formula) (known since $2000$ BC) to find the two roots guaranteed by the formula:
+For the quadratic case, there is the famous [quadratic formula](https://en.wikipedia.org/wiki/Quadratic_formula) (known since $2000$ BC) to find the two roots guaranteed by the formula:
 
 
 $$
@@ -275,180 +288,201 @@ plot!(x^2 + 1, -2, 2)                       # no real root
 plot!(zero, -2, 2)
 ```
 
-There are similar formulas for the [cubic](http://en.wikipedia.org/wiki/Cubic_function#General_formula_for_roots) and [quartic](http://en.wikipedia.org/wiki/Quartic_function#General_formula_for_roots) cases. (The [cubic formula](http://arxiv.org/pdf/math/0005026v1.pdf) was known to Cardano in $1545$, though through Tartagli, and the quartic was solved by Ferrari, Cardano's roommate.)
+There are similar formulas for the [cubic](https://en.wikipedia.org/wiki/Cubic_function#General_formula_for_roots) and [quartic](https://en.wikipedia.org/wiki/Quartic_function#General_formula_for_roots) cases. (The [cubic formula](https://arxiv.org/pdf/math/0005026v1.pdf) was known to Cardano in $1545$, though through Tartaglia, and the quartic was solved by Ferrari, Cardano's roommate.)
 
 
 In general, there is no such formula using radicals for $5$th degree polynomials or higher, a proof first given by Ruffini in $1803$ with improvement by Abel in $1824$. Even though the fundamental theorem shows that any polynomial can be factored into linear and quadratic terms, there is no general method as to how. (It is the case that *some* such polynomials may be solvable by radicals, just not all of them.)
 
 
-The `factor` function of `SymPy` only finds factors of polynomials with integer or rational coefficients corresponding to rational roots. There are alternatives.
+The `factored_poly` function factors over the rational numbers: every factor it finds has rational coefficients, so each linear factor it finds corresponds to a rational root. Irrational roots stay hidden inside a factor it leaves whole. There are alternatives.
 
 
-Finding roots with `SymPy` can also be done through its `solve` function, a function which also has a more general usage, as it can solve simple expressions or more than one expression. Here we illustrate that `solve` can easily handle quadratic expressions:
+Finding roots can also be done through the `symbolic_solve` function, a function which also has a more general usage, as it can solve other kinds of equations too. Here we illustrate that `symbolic_solve` can easily handle quadratic expressions:
 
 
 ```{julia}
-solve(x^2 + 2x - 3 ~ 0, x)
+symbolic_solve(x^2 + 2x - 3 ~ 0, x)
 ```
 
 The answer is a vector of values that when substituted in for the free variable `x` produce $0.$
 
-We use the `~` notation to define an equation to pass to `solve`. This convention is not necessary here, as `SymPy` will assume an expression passed to solve is an equation set to `0`, but is pedagogically useful. Equations do not have an equals sign, which is reserved for assignment. To solve a more complicated expression of the type $f(x) = g(x),$ one can solve $f(x) - g(x) = 0,$ use the `Eq` function, or use `f ~ g`.
+We use the `~` notation to define an equation to pass to `symbolic_solve`. This convention is not necessary here, as `symbolic_solve` will assume an expression passed to it is an equation set to `0`, but is pedagogically useful. Equations do not have an equals sign, which is reserved for assignment. To solve a more complicated expression of the type $f(x) = g(x),$ one can solve $f(x) - g(x) = 0,$ or use `f ~ g`.
 
 
-When the expression to solve has more than one free variable, the variable to solve for should be explicitly stated with a second argument. (The specification above is unnecessary.) For example, here we show that `solve` is aware of the quadratic formula:
+When the expression to solve has more than one free variable, the variable to solve for should be explicitly stated with a second argument. (The specification above is unnecessary.) For example, here we show that `symbolic_solve` is aware of the quadratic formula:
 
 
 ```{julia}
-@syms a b::real c::positive
-solve(a*x^2 + b*x + c ~ 0, x)
+@variables a b c
+symbolic_solve(a*x^2 + b*x + c ~ 0, x)
 ```
 
-The `solve` function will respect assumptions made when a variable is defined through `symbols` or `@syms`:
+### Real variables, complex roots
+
+
+Some computer algebra systems let a variable carry *assumptions*: `SymPy`, for one, can be told that `b` is real or that `c` is positive, and its `solve` then discards any solution that breaks the assumption. `symbolic_solve` works differently. The variables made by `@variables` are real by default, yet `symbolic_solve` does not use that to restrict its answers. Here `b` is real, and $b^2 + 1 = 0$ has no real solution, but the two complex solutions come back anyway:
 
 
 ```{julia}
-solve(a^2 + 1 ~ 0, a)     # works, as a can be complex
+symbolic_solve(b^2 + 1 ~ 0, b)
 ```
 
+There is also no way to declare a variable positive. Solving $c + 1 = 0$ simply gives the negative answer:
+
+
 ```{julia}
-solve(b^2 + 1 ~ 0, b)     # fails, as b is assumed real
+symbolic_solve(c + 1 ~ 0, c)
 ```
 
+So `symbolic_solve` finds all the roots, real and complex, and keeping only the ones wanted is a separate step, taken afterwards. For the real roots, the `numeric_roots` function (described [below](#numerically-finding-roots)) has an option to do this. The cubic $x^3 - x^2 + x - 1$ has one real root and two complex ones:
+
+
 ```{julia}
-solve(c + 1 ~ 0, c)       # fails, as c is assumed positive
+symbolic_solve(x^3 - x^2 + x - 1 ~ 0, x)
 ```
 
-Previously, it was mentioned that `factor` only factors polynomials with integer coefficients over rational roots. However, `solve` can be used to factor. Here is an example:
+and `real_only = true` keeps just the real one:
 
 
 ```{julia}
-factor(x^2 - 2)
+numeric_roots(x^3 - x^2 + x - 1, x; real_only = true)
+```
+
+### Factoring with `symbolic_solve`
+
+
+Previously, it was mentioned that `factored_poly` only factors over the rational numbers. However, `symbolic_solve` can be used to factor. Here is an example:
+
+
+```{julia}
+factored_poly(x^2 - 2, x)
 ```
 
 Nothing is found, as the roots are $\pm \sqrt{2}$, irrational numbers.
 
 
 ```{julia}
-rts = solve(x^2 - 2 ~ 0, x)
+rts = symbolic_solve(x^2 - 2 ~ 0, x)
 prod(x-r for r in rts)
 ```
 
-Solving cubics and quartics can be done exactly using radicals. For example, here we see the solutions to a quartic equation can be quite involved, yet still explicit. (We use `y` so that complex-valued solutions, if any, will be found.)
+Solving cubics and quartics can be done exactly using radicals. For example, here we see the solutions to a quartic equation can be quite involved, yet still explicit. (As above, complex-valued solutions will be found too: $x^4 - 2x - 1$ has two real roots and two complex ones.)
 
 
 ```{julia}
-@syms y # possibly complex
-solve(y^4 - 2y - 1 ~ 0, y)
+symbolic_solve(x^4 - 2x - 1 ~ 0, x)
 ```
 
-Third- and fourth-degree polynomials can be solved in general, with increasingly more complicated answers. The following finds one of the answers for a general third-degree polynomial:
+Third- and fourth-degree polynomials can be solved in general, with increasingly more complicated answers. Here `symbolic_solve` needs help: it stops with an error on the general cubic $a_3x^3 + a_2x^2 + a_1x + a_0$ with all four coefficients symbolic, and also on the monic cubic $x^3 + bx^2 + cx + d$. (Dividing by the leading coefficient does not change the roots, so the monic cubic is as general.) The classical route, the one Cardano took, is to *depress* the cubic first: to remove its $x^2$ term with the substitution $x = t - b/3$.
 
 
 ```{julia}
-#| hold: true
-@syms a[0:3]
-p = sum(a*x^(i-1) for (i,a) in enumerate(a))
-rts = solve(p ~ 0, x)
+@variables b c d t
+cubic = x^3 + b*x^2 + c*x + d
+depressed = expand(substitute(cubic, x => t - b/3))
+```
+
+The $t^2$ terms cancel, leaving a cubic of the form $t^3 + pt + q$, where $p = c - b^2/3$ and $q = 2b^3/27 - bc/3 + d$. This `symbolic_solve` can solve in general. The following finds one of the answers:
+
+
+```{julia}
+@variables p q
+rts = symbolic_solve(t^3 + p*t + q ~ 0, t)
 rts[1]   # there are three roots
 ```
 
-Some fifth degree polynomials are solvable in terms of radicals, however, `solve` will not seem to have luck with this particular fifth degree polynomial:
+This is Cardano's formula. The other two roots are written in the same cube roots, combined with the imaginary unit $i$. Each root $t$ of the depressed cubic gives the root $x = t - b/3$ of the original.
+
+
+Some fifth degree polynomials are solvable in terms of radicals, however, `symbolic_solve` will not seem to have luck with this particular fifth degree polynomial:
 
 
 ```{julia}
-solve(x^5 - x + 1 ~ 0, x)
+symbolic_solve(x^5 - x + 1 ~ 0, x)
 ```
 
-(Though there is no formula involving only radicals like the quadratic equation, there is a formula for the roots in terms of a function called the [Bring radical](http://en.wikipedia.org/wiki/Bring_radical).)
+What comes back is not a root but a placeholder, `roots_of`, naming the polynomial whose roots it could not express. (Though there is no formula involving only radicals like the quadratic equation, there is a formula for the roots in terms of a function called the [Bring radical](https://en.wikipedia.org/wiki/Bring_radical).)
 
 
-### The `roots` function
+### Repeated roots
 
 
-Related to `solve` is the specialized `roots` function for identifying roots, Unlike solve, it will identify multiplicities.
-
-
-For a polynomial with only one indeterminate the usage is straight forward:
+A root that is repeated counts once in the answer from `symbolic_solve`. Here $1$ and $2$ are each double roots, but each is listed once:
 
 
 ```{julia}
-roots((x-1)^2 * (x-2)^2)  # solve doesn't identify multiplicities
+symbolic_solve((x-1)^2 * (x-2)^2 ~ 0, x)
 ```
 
-For a polynomial with symbolic coefficients, the difference between the symbol and the coefficients must be identified. `SymPy` has a `Poly` type to do so. The following call illustrates:
+To see the multiplicities, factor instead. `factored_poly` shows them as powers:
 
 
 ```{julia}
-#| hold: true
-@syms a b c
-p = a*x^2 + b*x + c
-q1 = sympy.Poly(p, x)  # identify `x` as indeterminate; alternatively p.as_poly(x)
-roots(q1)
+factored_poly(expand((x-1)^2 * (x-2)^2), x)
 ```
 
-:::{.callout-note}
-## Note
-The sympy `Poly` function must be found within the underlying `sympy` module, a Python object, hence is qualified as `sympy.Poly`. This is common when using `SymPy`, as only a small handful of the many functions available are turned into `Julia` functions, the rest are used as would be done in Python. (This is similar, but different than qualifying by a `Julia` module when there are two conflicting names. An example will be the use of the name `roots` in both `SymPy` and `Polynomials` to refer to a function that finds the roots of a polynomial. If both functions were loaded, then the last line in the above example would need to be `SymPy.roots(q)` (note the capitalization.)
+and `poly_factors` lists each factor as often as it is repeated:
 
-:::
+
+```{julia}
+poly_factors(expand((x-1)^2 * (x-2)^2), x)
+```
+
+For a polynomial with symbolic coefficients, the difference between the symbol and the coefficients must be identified. The second argument of `symbolic_solve` does that: it names the variable, and every other symbol is treated as a coefficient. Here `x` is the variable and `a`, `b` and `c` are coefficients:
+
+
+```{julia}
+symbolic_solve(a*x^2 + b*x + c, x)
+```
 
 ### Numerically finding roots
 
 
-The `solve` function can be used to get numeric approximations to the roots. It is as easy as calling `N` on the solutions:
+The `numeric_roots` function gets numeric approximations to all the roots, real and complex:
 
 
 ```{julia}
-#| hold: true
-rts = solve(x^5 - x + 1 ~ 0, x)
-N.(rts)     # note the `.(` to broadcast over all values in rts
+numeric_roots(x^5 - x + 1, x)
 ```
 
-This polynomial has $1$ real root found by `solve`, as `x` is assumed to be real.
+As roots are complex numbers in general, all five come back as complex numbers, with an imaginary part of `0.0` for the real ones. This polynomial has $1$ real root, which `real_only = true` returns on its own, as a real number:
 
+
+```{julia}
+numeric_roots(x^5 - x + 1, x; real_only = true)
+```
 
 Here we see another example:
 
 
 ```{julia}
 ex = x^7 -3x^6 +  2x^5 -1x^3 +  2x^2 + 1x^1  - 2
-solve(ex ~ 0, x)
+symbolic_solve(ex ~ 0, x)
 ```
 
-This finds two of the seven possible roots, the remainder of the real roots can be found numerically:
+This finds two of the seven possible roots. The polynomial factors as $(x-1)(x-2)(x^5 - x - 1)$, and the other five roots, those of the fifth-degree factor, are left inside a `roots_of`. The remainder of the real roots can be found numerically:
 
 
 ```{julia}
-N.(solve(ex ~ 0, x))
+numeric_roots(ex, x; real_only = true)
 ```
 
-### The solveset function
-
-
-SymPy is phasing in the `solveset` function to replace `solve`. The main reason being that `solve` has too many different output types (a vector, a dictionary, ...). The output of `solveset` is always a set. For tasks like this, which return a finite set, we use the `collect` function to access the individual answers. To illustrate:
+An exact answer can also be correct and still hard to read. The polynomial $8x^4 - 8x^2 + 1$ has four real roots, and `symbolic_solve` finds them all, exactly, in nested square roots:
 
 
 ```{julia}
 p = 8x^4 - 8x^2  + 1
-p_rts = solveset(p ~ 0, x)
+symbolic_solve(p ~ 0, x)
 ```
 
-The `p_rts` object, a `Set`, does not allow indexed access to its elements. For that `collect` will work to return a vector:
+To get numeric approximations, we can use `numeric_roots`. These roots are all real, so the imaginary parts are all `0.0`:
 
 
 ```{julia}
-collect(p_rts)
+numeric_roots(p, x)
 ```
 
-To get the numeric approximation, we can broadcast:
-
-
-```{julia}
-N.(solveset(p ~ 0, x))
-```
-
-(There is no need to call `collect`---though you can---as broadcasting over a set falls back to broadcasting over the iteration of the set and in this case returns a vector.)
+(These numbers may look familiar: $0.9238\dots$ is $\cos(\pi/8)$ and $0.3826\dots$ is $\cos(3\pi/8)$. The polynomial is the Chebyshev polynomial $T_4$, and the questions at the end of this section look at that family.)
 
 ## Do numeric methods matter when you can just graph?
 
@@ -499,14 +533,28 @@ in fact there are three, two are *very* close together:
 
 
 ```{julia}
-N.(solve(h ~ 0, x))
+numeric_roots(h, x; real_only = true)
 ```
 
 :::{.callout-note}
 ## Note
-The difference of the two roots is around `1e-10`. For the graph over the interval of $[-5,7]$ there are about $800$ "pixels" used, so each pixel represents a size of about `1.5e-2`. So the cluster of roots would safely be hidden under a single "pixel."
+The difference of the two roots is around `7e-10`. For the graph over the interval of $[-5,7]$ there are about $800$ "pixels" used, so each pixel represents a size of about `1.5e-2`. So the cluster of roots would safely be hidden under a single "pixel."
 
 :::
+
+Two floating-point numbers this close together could also be a single double root, split in two by rounding error. `root_enclosures` settles the question. It works from the exact polynomial, and each real root comes back inside a small interval that is guaranteed to contain it, printed as `[midpoint +/- radius]`:
+
+
+```{julia}
+enclosures = root_enclosures(h, x)
+```
+
+The first two intervals do not overlap, so they contain two different roots:
+
+
+```{julia}
+Nemo.overlaps(enclosures[1], enclosures[2])
+```
 
 The point of this is to say, that it is useful to know where to look for roots, even if graphing calculators or graphing programs make drawing graphs relatively painless. A better way in this case would be to find the real roots first, and then incorporate that information into the choice of plot window.
 
@@ -523,7 +571,7 @@ A polynomial with real coefficients may or may not have real roots. The followin
 The study of polynomial roots is an old one. In $1637$ Descartes published a *simple* method to determine an upper bound on the number of *positive* real roots of a polynomial.
 
 
-> [Descartes' rule of signs](http://en.wikipedia.org/wiki/Descartes%27_rule_of_signs): if  $p=a_n x^n + a_{n-1}x^{n-1} + \cdots + a_1x + a_0$ then the number of  positive real roots is  either equal to the number of  sign differences between consecutive nonzero coefficients, or is  less than it by an even number. Repeated roots are counted separately.
+> [Descartes' rule of signs](https://en.wikipedia.org/wiki/Descartes%27_rule_of_signs): if  $p=a_n x^n + a_{n-1}x^{n-1} + \cdots + a_1x + a_0$ then the number of  positive real roots is  either equal to the number of  sign differences between consecutive nonzero coefficients, or is  less than it by an even number. Repeated roots are counted separately.
 
 
 
@@ -533,7 +581,7 @@ One method of proof (sketched at the end of this section) first shows that in sy
 An immediate consequence, is that a polynomial whose coefficients are all non-negative will have no positive real roots.
 
 
-Applying this to the polynomial $x^5 -x + 1$ we get That the coefficients have signs: `+ 0 0 0 - +` which collapses to the sign pattern `+`, `-`, `+`. This pattern  has two changes of sign. The number of *positive* real roots is either $2$ or $0$. In fact there are $0$ for this case.
+Applying this to the polynomial $x^5 -x + 1$ we get that the coefficients have signs: `+ 0 0 0 - +` which collapses to the sign pattern `+`, `-`, `+`. This pattern  has two changes of sign. The number of *positive* real roots is either $2$ or $0$. In fact there are $0$ for this case.
 
 
 What about negative roots? Clearly, any negative root of $p$ is a positive root of $q(x) = p(-x)$, as the graph of $q$ is just that of $p$ flipped through the $y$ axis. But the coefficients of $q$ are the same as $p$, except for the odd-indexed coefficients ($a_1, a_3, \dots$) have a changed sign.  Continuing with our example, for $q(x) = -x^5 + x + 1$ we get the new sign pattern `-`, `+`, `+` which yields one sign change. That is, there *must* be a negative real root, and indeed there is, $x \approx -1.1673$.
@@ -547,13 +595,13 @@ For another example, if we looked at $f(x) = x^5 - 100x^4 + 4000x^3 - 80000x^2 +
 
 ```{julia}
 j =  x^5 - 100x^4 + 4000x^3 - 80000x^2 + 799999x - 3199979
-N.(solve(j ~ 0, x))
+numeric_roots(j, x)
 ```
 
 ### Cauchy's bound on the magnitude of the real roots.
 
 
-Descartes' rule gives a bound on how many real roots there may be. Cauchy provided a bound on how large they can be. Assume our polynomial is monic (if not, divide by $a_n$ to make it so, as this won't effect the roots). Then any real root is no larger in absolute value than $h = 1 + |a_0| + |a_1| + |a_2| + \cdots + |a_{n-1}|$, (this is expressed in different ways.)
+Descartes' rule gives a bound on how many real roots there may be. Cauchy provided a bound on how large they can be. Assume our polynomial is monic (if not, divide by $a_n$ to make it so, as this won't affect the roots). Then any real root is no larger in absolute value than $h = 1 + |a_0| + |a_1| + |a_2| + \cdots + |a_{n-1}|$, (this is expressed in different ways.)
 
 
 To see precisely [why](https://captainblack.wordpress.com/2009/03/08/cauchys-upper-bound-for-the-roots-of-a-polynomial/) this bound works, suppose $x$ is a root with $|x| > 1$ and let $h$ be the bound. Then since $x$ is a root, we can solve $a_0 + a_1x + \cdots + 1 \cdot x^n = 0$ for $x^n$ as:
@@ -744,7 +792,7 @@ Does the expression $x^4 - 5$ factor over the rational numbers?
 yesnoq(false)
 ```
 
-Using `solve`, how many real roots does $x^4 - 5$ have:
+Using `numeric_roots`, how many real roots does $x^4 - 5$ have? (Then compare what `symbolic_solve` returns: every root it gives is written with an $i$. An exact form can look complex and still be real.)
 
 
 ```{julia}
@@ -765,10 +813,9 @@ Find the largest real root of $x^4 - 10x^3 + 32x^2 - 38x + 15$.
 ```{julia}
 #| hold: true
 #| echo: false
-@syms x
 p = x^4 - 10x^3 + 32x^2 - 38x + 15
-rts = sympy.real_roots(p)
-numericq(N(maximum(rts)))
+rts = numeric_roots(p, x; real_only = true)
+numericq(maximum(rts))
 ```
 
 ###### Question
@@ -818,7 +865,7 @@ yesnoq(length(xs) > 1)
 ###### Question
 
 
-What is the maximum number of positive, real roots that Descarte's bound says $p=x^5 + x^4 - x^3 + x^2 + x + 1$ can have?
+What is the maximum number of positive, real roots that Descartes' bound says $p=x^5 + x^4 - x^3 + x^2 + x + 1$ can have?
 
 
 ```{julia}
@@ -836,7 +883,7 @@ How many positive, real roots does it actually have?
 numericq(0)
 ```
 
-What is the maximum number of negative, real roots  that Descarte's bound says $p=x^5 + x^4 - x^3 + x^2 + x + 1$ can have?
+What is the maximum number of negative, real roots  that Descartes' bound says $p=x^5 + x^4 - x^3 + x^2 + x + 1$ can have?
 
 
 ```{julia}
@@ -882,24 +929,17 @@ numericq(answ)
 ###### Question
 
 
-As $1 + 2 + 3 + 4$ is $10$, Cauchy's bound says that the magnitude of the largest real root of $x^3 - ax^2 + bx - c$ is $10$ where $a,b,c$ is one of $2,3,4$. By considering all 6 such possible polynomials (such as $x^3 - 3x^2 + 2x - 4$) what is the largest magnitude or a root?
+As $1 + 2 + 3 + 4$ is $10$, Cauchy's bound says that the magnitude of the largest real root of $x^3 - ax^2 + bx - c$ is at most $10$ where $a,b,c$ is one of $2,3,4$. By considering all 6 such possible polynomials (such as $x^3 - 3x^2 + 2x - 4$) what is the largest magnitude of a root?
 
 
 ```{julia}
 #| hold: true
 #| echo: false
 function mag()
-    p = Permutation(0,2)
-    q = Permutation(1,2)
-    m = 0
-    for perm in (p, q, q*p, p*q, p*q*p)#, p^2)
-        as =  N.(collect(perm([2,3,4])))
-        fn = x -> x^3 - as[1]*x^2 + as[2]*x - as[3]
-        rts_ = find_zeros(fn, -10,10)
-	    a1 = maximum(abs.(rts_))
-	    m = a1 > m ? a1 : m
+    orders = ((2,3,4), (2,4,3), (3,2,4), (3,4,2), (4,2,3), (4,3,2))
+    maximum(orders) do (a, b, c)
+        maximum(abs, find_zeros(x -> x^3 - a*x^2 + b*x - c, -10, 10))
     end
-    m
 end
 numericq(mag())
 ```
@@ -941,16 +981,15 @@ yesnoq(true)
 1 + 20/16 + 5/16
 ```
 
-The Chebyshev polynomials have the property that in fact all $n$ roots are real, distinct, and in $[-1, 1]$. Using `SymPy`, find the magnitude of the largest root:
+The Chebyshev polynomials have the property that in fact all $n$ roots are real, distinct, and in $[-1, 1]$. Using `numeric_roots`, find the magnitude of the largest root:
 
 
 ```{julia}
 #| hold: true
 #| echo: false
-@syms x
 p = 16x^5 - 20x^3 + 5x
-rts = N.(solve(p))
-answ = maximum(norm.(rts))
+rts = numeric_roots(p, x; real_only = true)
+answ = maximum(abs.(rts))
 numericq(answ)
 ```
 
@@ -974,7 +1013,7 @@ yesnoq(true)
 ## Appendix: Proof of Descartes' rule of signs
 
 
-[Proof modified from this post](http://www.cut-the-knot.org/fta/ROS2.shtml).
+[Proof modified from this post](https://www.cut-the-knot.org/fta/ROS2.shtml).
 
 
 First, we can assume $p$ is monic ($p_n=1$ and *positive*), and $p_0$ is non zero. The latter, as we can easily deflate the polynomial by dividing by $x$ if $p_0$ is zero.
