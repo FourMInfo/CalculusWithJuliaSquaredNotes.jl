@@ -423,11 +423,11 @@ To confuse things even more, consider
 2pi^2pi
 ```
 
-Is this the same as `2 * (pi^2) * pi` or `(2pi)^(2pi)`? The former would be the case is powers had higher precedence than literal multiplication, the latter would be the case were it the reverse. In fact, the correct answer is `2 * (pi^(2*pi))`:
+Is this the same as `2 * (pi^2) * pi` or `(2pi)^(2pi)`? The former would be the case if powers had higher precedence than literal multiplication, the latter would be the case were it the reverse. In fact, the correct answer is `2 * (pi^(2*pi))`:
 
 
 ```{julia}
-2pi^2pi, 2 * (pi/2) * pi, (2pi)^(2pi), 2 * (pi^(2pi))
+2pi^2pi, 2 * (pi^2) * pi, (2pi)^(2pi), 2 * (pi^(2pi))
 ```
 
 This follows usual mathematical convention, but is a source of potential confusion. It can be best to be explicit about multiplication, save for the simplest of cases.
@@ -592,7 +592,7 @@ On a machine with $64$-bit integers, the first of these two values is correct, t
 
 Wrong is in quotes, as though they are mathematically incorrect, computationally they are correct. The last two are due to overflow. The cost of checking is considered too high, so no error is thrown and the values represent what happens at the machine level.
 
-The user is expected to have a sense that they need to be careful when their values are quite large. But the better recommendation is that the user use floating point numbers, which as easy as typing `2.0^63`. Though not always exact, floating point values can represent a much bigger range values and are exact for a reasonably wide range of integer values.
+The user is expected to have a sense that they need to be careful when their values are quite large. But the better recommendation is that the user use floating point numbers, which is as easy as typing `2.0^63`. Though not always exact, floating point values can represent a much bigger range of values and are exact for a reasonably wide range of integer values.
 
 
 ::: {.callout-note}
