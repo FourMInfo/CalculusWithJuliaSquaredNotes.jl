@@ -1121,7 +1121,10 @@ A twitter post from popular mechanics generated some attention.
 ![Order of operations](./figures/order_operations_pop_mech.png)
 
 
-What is the answer?
+The expression is ambiguous, and the answer depends on a convention, which is why the post started a fight. Read with strict left-to-right PEMDAS, where `2(2+2)` is an ordinary multiplication, it is 16. Read with implied multiplication binding tighter than division, common in mathematical writing and the rule `Julia` uses, it is 1.
+
+
+What is the answer by strict left-to-right PEMDAS?
 
 
 ```{julia}
@@ -1131,7 +1134,7 @@ val = 8/2*(2+2)
 numericq(val)
 ```
 
-Does this expression return the *correct* answer using proper order of operations?
+Does `Julia` give the strict left-to-right PEMDAS answer for this expression?
 
 
 ```{julia}
@@ -1157,6 +1160,8 @@ choices = [
 answ=1
 radioq(choices, answ)
 ```
+
+Neither answer is wrong. To say which one you mean, write `(8/2)*(2+2)` or `8/(2*(2+2))`.
 
 ##### Question
 
